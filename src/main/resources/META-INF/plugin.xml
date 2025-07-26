@@ -1,7 +1,7 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>com.github.echentw.typescriptnamespaceimportswebstormplugin</id>
-    <name>typescript-namespace-imports-webstorm-plugin</name>
+    <id>com.github.echentw.typescriptnamespaceimports</id>
+    <name>Typescript Namespace Imports</name>
     <vendor>echentw</vendor>
 
     <depends>com.intellij.modules.platform</depends>
