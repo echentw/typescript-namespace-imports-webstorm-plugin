@@ -3,7 +3,6 @@ package com.github.echentw.typescriptnamespaceimportswebstormplugin.services
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
 import java.util.concurrent.ConcurrentHashMap
@@ -11,18 +10,18 @@ import java.util.concurrent.ConcurrentHashMap
 @Service(Service.Level.PROJECT)
 class TypeScriptFileScannerService(private val project: Project) {
     
-    private val typeScriptFiles = ConcurrentHashMap<String, VirtualFile>()
+    private val tsFileByPath = ConcurrentHashMap<String, VirtualFile>()
     
     init {
-        scanForTypeScriptFiles()
+        scanForTsFiles()
     }
     
-    fun getTypeScriptFiles(): Map<String, VirtualFile> {
-        return typeScriptFiles.toMap()
+    fun getTsFileByPath(): Map<String, VirtualFile> {
+        return tsFileByPath.toMap()
     }
     
-    private fun scanForTypeScriptFiles() {
-        typeScriptFiles.clear()
+    private fun scanForTsFiles() {
+        tsFileByPath.clear()
         
         // Find all .ts and .tsx files in the project
         val tsFiles = FilenameIndex.getAllFilesByExt(project, "ts", GlobalSearchScope.projectScope(project))
@@ -38,11 +37,11 @@ class TypeScriptFileScannerService(private val project: Project) {
                 continue
             }
             
-            typeScriptFiles[path] = file
+            tsFileByPath[path] = file
             println("Found TypeScript file: $path")
         }
         
-        println("Total TypeScript files found: ${typeScriptFiles.size}")
+        println("Total TypeScript files found: ${tsFileByPath.size}")
     }
     
     private fun shouldIgnoreFile(path: String): Boolean {
