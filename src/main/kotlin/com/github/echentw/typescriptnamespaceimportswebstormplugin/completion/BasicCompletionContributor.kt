@@ -48,14 +48,14 @@ class BasicCompletionContributor : CompletionContributor() {
 
                     // Add completion suggestions based on module names
                     // Use originalFile.virtualFile which works reliably in completion context
-                    val currentFile = parameters.originalFile.virtualFile ?: parameters.position.containingFile?.virtualFile
+                    val currentFile = parameters.originalFile.virtualFile
                     
                     if (currentFile != null) {
                         modulesByPrefix[letter]?.forEach { moduleInfo ->
                             if (moduleInfo.moduleName.lowercase().startsWith(prefix)) {
                                 // Use TsConfigService for proper path resolution
                                 val modulePath = tsConfigService.resolveModulePath(currentFile, moduleInfo.virtualFile)
-                                val importStatement = "import * as ${moduleInfo.moduleName} from '$modulePath'"
+                                val importStatement = "import * as ${moduleInfo.moduleName} from '$modulePath';"
 
                                 result.addElement(
                                     LookupElementBuilder.create(importStatement)

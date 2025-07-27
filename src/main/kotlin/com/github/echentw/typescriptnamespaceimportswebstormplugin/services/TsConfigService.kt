@@ -119,17 +119,15 @@ class TsConfigService(private val project: Project) {
      * Simple comment removal for JSON (not perfect but handles basic cases)
      */
     private fun removeJsonComments(json: String): String {
-        return json.lines()
-            .map { line ->
-                // Remove single-line comments
-                val commentIndex = line.indexOf("//")
-                if (commentIndex >= 0) {
-                    line.substring(0, commentIndex)
-                } else {
-                    line
-                }
+        return json.lines().joinToString("\n") { line ->
+            // Remove single-line comments
+            val commentIndex = line.indexOf("//")
+            if (commentIndex >= 0) {
+                line.substring(0, commentIndex)
+            } else {
+                line
             }
-            .joinToString("\n")
+        }
     }
     
     /**
