@@ -3,12 +3,23 @@ package com.github.echentw.typescriptnamespaceimportswebstormplugin.services
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.openapi.vfs.newvfs.BulkFileListener
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
+import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
+import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
+import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
+import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 data class TsConfigInfo(
     val configFile: VirtualFile,
@@ -23,9 +34,78 @@ class TsConfigService(private val project: Project) {
     
     private val tsConfigs = ConcurrentHashMap<String, TsConfigInfo>()
     private val gson = Gson()
+    private var isInitialized = false
+    private val debounceExecutor = Executors.newSingleThreadScheduledExecutor()
+    private var pendingRescanTask: java.util.concurrent.ScheduledFuture<*>? = null
     
-    init {
-        scanForTsConfigs()
+    fun initialize() {
+        if (!isInitialized) {
+            scanForTsConfigs()
+            setupFileWatcher()
+            isInitialized = true
+        }
+    }
+    
+    private fun setupFileWatcher() {
+        val connection = project.messageBus.connect()
+        connection.subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
+            override fun after(events: List<VFileEvent>) {
+                val relevantEvents = events.filter { event ->
+                    isTsConfigFile(event) && isInProjectScope(event)
+                }
+                
+                if (relevantEvents.isNotEmpty()) {
+                    thisLogger().debug("tsconfig.json files changed: ${relevantEvents.size} events")
+                    scheduleRescan()
+                }
+            }
+        })
+    }
+    
+    private fun isTsConfigFile(event: VFileEvent): Boolean {
+        val fileName = when (event) {
+            is VFileCreateEvent -> event.childName
+            is VFileDeleteEvent -> event.file?.name
+            is VFileMoveEvent -> event.file.name
+            is VFileContentChangeEvent -> event.file.name
+            else -> null
+        }
+        return fileName == "tsconfig.json"
+    }
+    
+    private fun isInProjectScope(event: VFileEvent): Boolean {
+        val file = when (event) {
+            is VFileCreateEvent -> event.parent?.findChild(event.childName)
+            is VFileDeleteEvent -> event.file
+            is VFileMoveEvent -> event.file
+            is VFileContentChangeEvent -> event.file
+            else -> null
+        }
+        
+        return file?.let { 
+            project.basePath?.let { basePath -> it.path.startsWith(basePath) } == true
+        } ?: false
+    }
+    
+    private fun scheduleRescan() {
+        // Cancel any pending rescan
+        pendingRescanTask?.cancel(false)
+        
+        // Schedule a new rescan with debouncing (wait 1000ms after last change for tsconfig)
+        pendingRescanTask = debounceExecutor.schedule({
+            ApplicationManager.getApplication().runReadAction {
+                try {
+                    thisLogger().info("Rescanning tsconfig.json files due to file system changes")
+                    scanForTsConfigs()
+                    
+                    // Also trigger TypeScript file rescan since tsconfig changes affect filtering
+                    val fileScanner = project.getService(TypeScriptFileScannerService::class.java)
+                    fileScanner.forceRescan()
+                } catch (e: Exception) {
+                    thisLogger().error("Error during tsconfig.json rescan", e)
+                }
+            }
+        }, 1000, TimeUnit.MILLISECONDS)
     }
     
     
