@@ -29,6 +29,9 @@ class TypeScriptFileScannerService(private val project: Project) {
     private fun scanForModules() {
         modulesByFirstLetter.clear()
         
+        // Get TsConfigService to check for outDir exclusions
+        val tsConfigService = project.getService(TsConfigService::class.java)
+        
         // Find all .ts and .tsx files in the project
         val tsFiles = FilenameIndex.getAllFilesByExt(project, "ts", GlobalSearchScope.projectScope(project))
         val tsxFiles = FilenameIndex.getAllFilesByExt(project, "tsx", GlobalSearchScope.projectScope(project))
@@ -40,6 +43,11 @@ class TypeScriptFileScannerService(private val project: Project) {
             
             // Skip node_modules and other irrelevant directories
             if (shouldIgnoreFile(path)) {
+                continue
+            }
+            
+            // Skip files in TypeScript output directories
+            if (shouldIgnoreFileBasedOnTsConfig(file, tsConfigService)) {
                 continue
             }
             
@@ -65,6 +73,21 @@ private fun shouldIgnoreFile(path: String): Boolean {
             path.contains("/dist/") ||
             path.contains("/out/") ||
             path.contains("/.idea/")
+}
+
+private fun shouldIgnoreFileBasedOnTsConfig(file: VirtualFile, tsConfigService: TsConfigService): Boolean {
+    val tsConfig = tsConfigService.getTsConfigForFile(file)
+    
+    if (tsConfig?.outDir != null) {
+        val configDir = tsConfig.configFile.parent
+        val outDir = configDir.findFileByRelativePath(tsConfig.outDir)
+        
+        if (outDir != null && file.path.startsWith(outDir.path)) {
+            return true
+        }
+    }
+    
+    return false
 }
 
 private fun makeModuleName(filePath: String): String {
