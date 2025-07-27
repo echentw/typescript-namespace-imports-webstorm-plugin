@@ -33,11 +33,14 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 - [x] Example: `src/common/map_util.ts` → suggest "mapUtil" prefix
 - [x] Store mapping of prefix → file path
 
-### Phase 3: Basic Import Suggestions
+### Phase 3: Basic Import Suggestions  
 **Step 5: Simple Import Completion** ✅
 - [x] When user types "mapU", suggest `import * as mapUtil from './path/to/file'`
-- [x] Use relative paths for now (no tsconfig.json parsing yet)
+- [x] Use relative paths for now (no tsconfig.json parsing yet)  
 - [x] Test with a few hardcoded examples
+- [x] **Auto-import functionality** - insert module name at cursor + import statement at top of file
+- [x] **Duplicate import detection** - prevent adding imports that already exist
+- [x] **Smart import placement** - insert after existing imports or at file beginning
 
 ### Phase 4: TypeScript Project Integration ✅
 **Step 6: Find tsconfig.json Files** ✅
