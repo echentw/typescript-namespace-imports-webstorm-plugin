@@ -58,10 +58,16 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 - [ ] Respect `.gitignore` patterns
 - [ ] Add configuration options for custom exclusions
 
-**Step 9: Performance & Caching**
-- [ ] Cache file scans and tsconfig parsing
-- [ ] Incremental updates when files change
-- [ ] Debounce file system watchers
+**Step 9: Performance & Caching** ✅
+- [x] Cache file scans and tsconfig parsing (services cache in init blocks)
+- [x] Move scanning from lazy service initialization to project startup
+- [x] Add file system watchers for incremental updates when files change
+- [x] Smart debouncing - immediate processing for TS files (incremental), 1000ms for tsconfig (full rescan)
+- [x] Background indexing to avoid blocking UI during initial scan
+- [x] Optimize completion performance (reads from pre-built cache)
+- [x] **Incremental file updates** - add/remove individual files instead of full rescans
+- [x] **Smart event handling** - create/delete/move/rename operations update cache incrementally
+- [x] **Optimal event processing** - process entire event batch in single background task
 
 ### Phase 6: Polish & Edge Cases
 **Step 10: Enhanced Matching**
@@ -75,8 +81,8 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 - [ ] Configuration panel in IDE settings
 
 ## Current Status
-✅ **Completed**: Step 7 - Path Resolution (including Steps 6-7)  
-🎯 **Ready for**: Step 8 - Advanced Filtering (partially complete) or Step 9 - Performance & Caching
+✅ **Completed**: Step 9 - Performance & Caching (including Steps 6-9)  
+🎯 **Ready for**: Step 8 - Advanced Filtering (complete `.gitignore` support) or Step 10 - Enhanced Matching
 
 ## Notes
 - Starting with simple "asdf!" completion to learn IntelliJ Platform plugin development

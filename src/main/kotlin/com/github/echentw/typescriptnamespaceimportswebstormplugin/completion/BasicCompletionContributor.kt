@@ -25,6 +25,11 @@ class BasicCompletionContributor : CompletionContributor() {
                     val project = parameters.position.project
                     val fileScanner = project.getService(TypeScriptFileScannerService::class.java)
                     val tsConfigService = project.getService(TsConfigService::class.java)
+                    
+                    // Ensure services are initialized (fallback for safety)
+                    fileScanner.initialize()
+                    tsConfigService.initialize()
+                    
                     val modulesByPrefix = fileScanner.getModulesByFirstLetter()
 
                     // Get the prefix being typed
