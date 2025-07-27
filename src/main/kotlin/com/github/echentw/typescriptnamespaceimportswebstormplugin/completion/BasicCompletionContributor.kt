@@ -21,13 +21,13 @@ class BasicCompletionContributor : CompletionContributor() {
                 ) {
                     val project = parameters.position.project
                     val fileScanner = project.getService(TypeScriptFileScannerService::class.java)
-                    val tsFileByPath = fileScanner.getTsFileByPath()
+                    val modulesByPrefix = fileScanner.getModulesByPrefix()
                     
                     // Get the prefix being typed
-                    val prefix = result.prefixMatcher.prefix
+                    val prefix = result.prefixMatcher.prefix.lowercase()
                     
                     println("Completion triggered with prefix: '$prefix'")
-                    println("Found ${tsFileByPath.size} TypeScript files")
+                    println("Total module prefixes available: ${modulesByPrefix.size}")
 
                     // Still keep the original "asdf" test for now
                     if ("asdf".startsWith(prefix)) {
@@ -38,15 +38,15 @@ class BasicCompletionContributor : CompletionContributor() {
                         )
                     }
                     
-                    // Add completion for TypeScript files (for testing)
-                    for (entry in tsFileByPath) {
-                        if (entry.value.name.startsWith(prefix)) {
-                            result.addElement(
-                                LookupElementBuilder.create(entry.value.name)
-                                    .withPresentableText(entry.value.name)
-                                    .withTailText(" (Found ${tsFileByPath.size} TS files)")
-                            )
-                        }
+                    // Add completion suggestions based on module names
+                    modulesByPrefix[prefix]?.forEach { moduleInfo ->
+                        val importStatement = "import * as ${moduleInfo.moduleName} from '${moduleInfo.filePath}'"
+                        result.addElement(
+                            LookupElementBuilder.create(importStatement)
+                                .withPresentableText("${moduleInfo.moduleName}")
+                                .withTailText(" from ${moduleInfo.virtualFile.name}")
+                                .withTypeText("namespace import")
+                        )
                     }
                 }
             }

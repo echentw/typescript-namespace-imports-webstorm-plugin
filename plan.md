@@ -28,10 +28,10 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 - [x] Store file paths in a simple list/map
 - [x] Ignore basic patterns like `node_modules/` for now
 
-**Step 4: Extract Module Names**
-- [ ] Parse file paths to generate potential import names
-- [ ] Example: `src/common/map_util.ts` → suggest "mapUtil" prefix
-- [ ] Store mapping of prefix → file path
+**Step 4: Extract Module Names** ✅
+- [x] Parse file paths to generate potential import names
+- [x] Example: `src/common/map_util.ts` → suggest "mapUtil" prefix
+- [x] Store mapping of prefix → file path
 
 ### Phase 3: Basic Import Suggestions
 **Step 5: Simple Import Completion**
@@ -74,7 +74,7 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 
 ## Current Status
 ✅ **Completed**: Step 1 - Basic completion contributor
-🎯 **Ready for**: Step 4 - Extract Module Names
+🎯 **Ready for**: Step 5 - Simple Import Completion
 
 ## Notes
 - Starting with simple "asdf!" completion to learn IntelliJ Platform plugin development
