@@ -128,97 +128,82 @@ class TsConfigService(private val project: Project) {
     fun resolveModulePath(sourceFile: VirtualFile, targetFile: VirtualFile): String {
         val tsConfig = getTsConfigForFile(sourceFile)
         val targetTsConfig = getTsConfigForFile(targetFile)
-        
-        // Check if both files are in the same TypeScript project
         val sameProject = tsConfig != null && tsConfig == targetTsConfig
-        
+
         println("Resolving module path:")
         println("  Source: ${sourceFile.path}")
         println("  Target: ${targetFile.path}")
         println("  Same project: $sameProject")
         println("  TsConfig: ${tsConfig?.configFile?.path}")
+
         if (tsConfig != null) {
             println("  BaseUrl: ${tsConfig.baseUrl}")
             println("  RootDir: ${tsConfig.rootDir}")
             println("  Paths: ${tsConfig.paths?.keys}")
+
+            // Try path mappings first (highest priority)
+            resolveWithPathMappings(tsConfig, targetFile)?.let { return it }
+            
+            // Try baseUrl resolution for same-project files
+            val targetTsConfig = getTsConfigForFile(targetFile)
+            if (tsConfig == targetTsConfig) {
+                resolveWithBaseUrl(tsConfig, targetFile)?.let { return it }
+            }
         }
         
-        if (tsConfig != null) {
-            val configDir = tsConfig.configFile.parent
-            
-            // First, check if any path mappings apply
-            tsConfig.paths?.forEach { (pattern, mappings) ->
-                if (pattern.endsWith("/*")) {
-                    val prefix = pattern.substringBeforeLast("/*")
-                    mappings.forEach { mapping ->
-                        if (mapping.endsWith("/*")) {
-                            val mappingDir = mapping.substringBeforeLast("/*")
-                            val actualDir = configDir.findFileByRelativePath(mappingDir)
-                            
-                            if (actualDir != null && targetFile.path.startsWith(actualDir.path)) {
-                                val relativePart = targetFile.path.removePrefix(actualDir.path).removePrefix("/")
-                                val modulePathWithoutExt = relativePart.substringBeforeLast(".")
-                                val resolvedPath = "$prefix/$modulePathWithoutExt"
-                                println("  Resolved path: $resolvedPath (path mapping)")
-                                return resolvedPath
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // For same-project files, use baseUrl + rootDir resolution
-            if (sameProject && tsConfig.baseUrl != null) {
-                val baseDir = configDir.findFileByRelativePath(tsConfig.baseUrl)
-                
-                if (baseDir != null) {
-                    // If rootDir is specified, files should be resolved relative to baseUrl+rootDir
-                    val resolveFromDir = if (tsConfig.rootDir != null) {
-                        configDir.findFileByRelativePath("${tsConfig.baseUrl}/${tsConfig.rootDir}")
-                            ?: baseDir
-                    } else {
-                        baseDir
-                    }
-                    
-                    // Check if target file is within the resolve directory
-                    if (targetFile.path.startsWith(resolveFromDir.path)) {
-                        val relativePath = try {
-                            resolveFromDir.toNioPath().relativize(targetFile.toNioPath()).toString()
-                        } catch (e: Exception) {
-                            null
-                        }
+        // Fall back to relative path resolution
+        return generateRelativePath(sourceFile, targetFile)
+    }
+    
+    private fun resolveWithPathMappings(tsConfig: TsConfigInfo, targetFile: VirtualFile): String? {
+        val configDir = tsConfig.configFile.parent
+        
+        tsConfig.paths?.forEach { (pattern, mappings) ->
+            if (pattern.endsWith("/*")) {
+                val prefix = pattern.substringBeforeLast("/*")
+                mappings.forEach { mapping ->
+                    if (mapping.endsWith("/*")) {
+                        val mappingDir = mapping.substringBeforeLast("/*")
+                        val actualDir = configDir.findFileByRelativePath(mappingDir)
                         
-                        if (relativePath != null && !relativePath.startsWith("..")) {
-                            // Remove file extension for TypeScript imports
-                            val modulePathWithoutExt = relativePath.substringBeforeLast(".")
-                            val resolvedPath = modulePathWithoutExt.replace("\\", "/") // Normalize path separators
-                            println("  Resolved path: $resolvedPath (baseUrl+rootDir)")
-                            return resolvedPath
+                        if (actualDir != null && targetFile.path.startsWith(actualDir.path)) {
+                            val relativePart = targetFile.path.removePrefix(actualDir.path).removePrefix("/")
+                            val modulePathWithoutExt = relativePart.substringBeforeLast(".")
+                            return "$prefix/$modulePathWithoutExt"
                         }
-                    }
-                    
-                    // If not in rootDir, try baseUrl resolution
-                    val relativePath = try {
-                        baseDir.toNioPath().relativize(targetFile.toNioPath()).toString()
-                    } catch (e: Exception) {
-                        null
-                    }
-                    
-                    if (relativePath != null && !relativePath.startsWith("..")) {
-                        // Remove file extension for TypeScript imports
-                        val modulePathWithoutExt = relativePath.substringBeforeLast(".")
-                        val resolvedPath = modulePathWithoutExt.replace("\\", "/") // Normalize path separators
-                        println("  Resolved path: $resolvedPath (baseUrl)")
-                        return resolvedPath
                     }
                 }
             }
         }
+        return null
+    }
+    
+    private fun resolveWithBaseUrl(tsConfig: TsConfigInfo, targetFile: VirtualFile): String? {
+        if (tsConfig.baseUrl == null) return null
         
-        // Fall back to relative path resolution for cross-project or when no tsconfig
-        val fallbackPath = generateRelativePath(sourceFile, targetFile)
-        println("  Resolved path: $fallbackPath (fallback)")
-        return fallbackPath
+        val configDir = tsConfig.configFile.parent
+        val baseDir = configDir.findFileByRelativePath(tsConfig.baseUrl) ?: return null
+        
+        // Try rootDir first, then baseUrl
+        val resolveDirs = listOfNotNull(
+            tsConfig.rootDir?.let { configDir.findFileByRelativePath("${tsConfig.baseUrl}/$it") },
+            baseDir
+        )
+        
+        for (resolveDir in resolveDirs) {
+            if (targetFile.path.startsWith(resolveDir.path)) {
+                val relativePath = try {
+                    resolveDir.toNioPath().relativize(targetFile.toNioPath()).toString()
+                } catch (e: Exception) {
+                    continue
+                }
+                
+                if (!relativePath.startsWith("..")) {
+                    return relativePath.substringBeforeLast(".").replace("\\", "/")
+                }
+            }
+        }
+        return null
     }
     
     private fun generateRelativePath(fromFile: VirtualFile, toFile: VirtualFile): String {
