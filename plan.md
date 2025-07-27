@@ -39,20 +39,22 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 - [x] Use relative paths for now (no tsconfig.json parsing yet)
 - [x] Test with a few hardcoded examples
 
-### Phase 4: TypeScript Project Integration
-**Step 6: Find tsconfig.json Files**
-- [ ] Locate all `tsconfig.json` files in the project
-- [ ] Parse basic properties: `baseUrl`, `paths`, `outDir`
-- [ ] Handle multiple TypeScript projects in one workspace
+### Phase 4: TypeScript Project Integration ✅
+**Step 6: Find tsconfig.json Files** ✅
+- [x] Locate all `tsconfig.json` files in the project
+- [x] Parse basic properties: `baseUrl`, `paths`, `outDir`, `rootDir`
+- [x] Handle multiple TypeScript projects in one workspace
 
-**Step 7: Path Resolution**
-- [ ] Use `baseUrl` and `paths` mapping to generate correct import paths
-- [ ] Convert file system paths to TypeScript module paths
-- [ ] Example: `src/common/map_util.ts` + baseUrl → `common/map_util`
+**Step 7: Path Resolution** ✅
+- [x] Use `baseUrl` and `paths` mapping to generate correct import paths
+- [x] Convert file system paths to TypeScript module paths
+- [x] Example: `src/common/map_util.ts` + baseUrl → `common/map_util`
+- [x] Handle `rootDir` configuration for proper module resolution
+- [x] Prioritize path mappings over baseUrl resolution
 
 ### Phase 5: Smart Filtering & Performance
-**Step 8: Advanced Filtering**
-- [ ] Exclude `node_modules/`, `outDir`, and other irrelevant paths
+**Step 8: Advanced Filtering** ⏳
+- [x] Exclude `node_modules/`, `outDir`, and other irrelevant paths
 - [ ] Respect `.gitignore` patterns
 - [ ] Add configuration options for custom exclusions
 
@@ -73,8 +75,8 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 - [ ] Configuration panel in IDE settings
 
 ## Current Status
-✅ **Completed**: Step 5 - Simple Import Completion  
-🎯 **Ready for**: Step 6 - Find tsconfig.json Files
+✅ **Completed**: Step 7 - Path Resolution (including Steps 6-7)  
+🎯 **Ready for**: Step 8 - Advanced Filtering (partially complete) or Step 9 - Performance & Caching
 
 ## Notes
 - Starting with simple "asdf!" completion to learn IntelliJ Platform plugin development

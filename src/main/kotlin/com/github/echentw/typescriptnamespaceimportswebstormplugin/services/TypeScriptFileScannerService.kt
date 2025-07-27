@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 data class ModuleInfo(
     val moduleName: String,
-    val filePath: String,
     val virtualFile: VirtualFile
 )
 
@@ -29,6 +28,9 @@ class TypeScriptFileScannerService(private val project: Project) {
     private fun scanForModules() {
         modulesByFirstLetter.clear()
         
+        // Get TsConfigService to check for outDir exclusions
+        val tsConfigService = project.getService(TsConfigService::class.java)
+        
         // Find all .ts and .tsx files in the project
         val tsFiles = FilenameIndex.getAllFilesByExt(project, "ts", GlobalSearchScope.projectScope(project))
         val tsxFiles = FilenameIndex.getAllFilesByExt(project, "tsx", GlobalSearchScope.projectScope(project))
@@ -43,18 +45,21 @@ class TypeScriptFileScannerService(private val project: Project) {
                 continue
             }
             
+            // Skip files in TypeScript output directories
+            if (shouldIgnoreFileBasedOnTsConfig(file, tsConfigService)) {
+                continue
+            }
+            
             // Extract module name from file path
             val moduleName = makeModuleName(path)
-            val moduleInfo = ModuleInfo(moduleName, path, file)
+            val moduleInfo = ModuleInfo(moduleName, file)
             
             // Add to prefix mapping for all possible prefixes
             val prefix = moduleName.substring(0, 1).lowercase()
             modulesByFirstLetter.computeIfAbsent(prefix) { mutableListOf() }.add(moduleInfo)
 
-            println("Found TypeScript file: $path -> module name: $moduleName")
         }
         
-        println("Total module prefixes: ${modulesByFirstLetter.size}")
     }
 }
 
@@ -65,6 +70,21 @@ private fun shouldIgnoreFile(path: String): Boolean {
             path.contains("/dist/") ||
             path.contains("/out/") ||
             path.contains("/.idea/")
+}
+
+private fun shouldIgnoreFileBasedOnTsConfig(file: VirtualFile, tsConfigService: TsConfigService): Boolean {
+    val tsConfig = tsConfigService.getTsConfigForFile(file)
+    
+    if (tsConfig?.outDir != null) {
+        val configDir = tsConfig.configFile.parent
+        val outDir = configDir.findFileByRelativePath(tsConfig.outDir)
+        
+        if (outDir != null && file.path.startsWith(outDir.path)) {
+            return true
+        }
+    }
+    
+    return false
 }
 
 private fun makeModuleName(filePath: String): String {

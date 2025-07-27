@@ -7,7 +7,7 @@ import com.intellij.util.ProcessingContext
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.TypeScriptFileScannerService
-import java.io.File
+import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.TsConfigService
 
 class BasicCompletionContributor : CompletionContributor() {
 
@@ -24,19 +24,12 @@ class BasicCompletionContributor : CompletionContributor() {
                 ) {
                     val project = parameters.position.project
                     val fileScanner = project.getService(TypeScriptFileScannerService::class.java)
+                    val tsConfigService = project.getService(TsConfigService::class.java)
                     val modulesByPrefix = fileScanner.getModulesByFirstLetter()
 
                     // Get the prefix being typed
                     val prefix = result.prefixMatcher.prefix.lowercase()
 
-                    // Still keep the original "asdf" test for now
-                    if ("asdf".startsWith(prefix)) {
-                        result.addElement(
-                            LookupElementBuilder.create("asdf!!!")
-                                .withPresentableText("asdf!!!")
-                                .withTailText(" (Basic completion test)")
-                        )
-                    }
 
                     // Check if prefix is empty to avoid issues
                     if (prefix.isEmpty()) {
@@ -47,19 +40,19 @@ class BasicCompletionContributor : CompletionContributor() {
 
                     // Add completion suggestions based on module names
                     // Use originalFile.virtualFile which works reliably in completion context
-                    val currentFile = parameters.originalFile.virtualFile ?: parameters.position.containingFile?.virtualFile
+                    val currentFile = parameters.originalFile.virtualFile
                     
                     if (currentFile != null) {
                         modulesByPrefix[letter]?.forEach { moduleInfo ->
                             if (moduleInfo.moduleName.lowercase().startsWith(prefix)) {
-                                // Generate relative import path
-                                val relativePath = generateRelativePath(project, currentFile, moduleInfo.virtualFile)
-                                val importStatement = "import * as ${moduleInfo.moduleName} from '$relativePath'"
+                                // Use TsConfigService for proper path resolution
+                                val modulePath = tsConfigService.resolveModulePath(currentFile, moduleInfo.virtualFile)
+                                val importStatement = "import * as ${moduleInfo.moduleName} from '$modulePath';"
 
                                 result.addElement(
                                     LookupElementBuilder.create(importStatement)
                                         .withPresentableText(moduleInfo.moduleName)
-                                        .withTailText(" from $relativePath")
+                                        .withTailText(" from $modulePath")
                                         .withTypeText("namespace import")
                                 )
                             }
@@ -70,29 +63,4 @@ class BasicCompletionContributor : CompletionContributor() {
         )
     }
 
-    private fun generateRelativePath(project: Project, fromFile: VirtualFile, toFile: VirtualFile): String {
-        val projectBasePath = project.basePath ?: return toFile.path
-
-        // Get the directory of the current file
-        val fromDir = fromFile.parent
-
-        // Calculate relative path from current file's directory to target file
-        val fromPath = File(fromDir.path)
-        val toPath = File(toFile.path)
-
-        val relativePath = try {
-            fromPath.toPath().relativize(toPath.toPath()).toString()
-        } catch (e: Exception) {
-            // Fallback to absolute path relative to project root
-            toFile.path.removePrefix(projectBasePath).removePrefix("/")
-        }
-
-        // Remove file extension and ensure it starts with ./ for relative imports
-        val pathWithoutExt = relativePath.substringBeforeLast(".")
-        return if (pathWithoutExt.startsWith("..") || pathWithoutExt.startsWith("/")) {
-            pathWithoutExt
-        } else {
-            "./$pathWithoutExt"
-        }
-    }
 }
