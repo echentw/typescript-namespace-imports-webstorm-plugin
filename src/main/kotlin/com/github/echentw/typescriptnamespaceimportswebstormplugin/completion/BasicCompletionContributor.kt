@@ -47,7 +47,7 @@ class BasicCompletionContributor : CompletionContributor() {
 
                     // Add completion suggestions based on module names
                     // Use originalFile.virtualFile which works reliably in completion context
-                    val currentFile = parameters.originalFile?.virtualFile ?: parameters.position.containingFile?.virtualFile
+                    val currentFile = parameters.originalFile.virtualFile ?: parameters.position.containingFile?.virtualFile
                     
                     if (currentFile != null) {
                         modulesByPrefix[letter]?.forEach { moduleInfo ->
