@@ -100,41 +100,10 @@ class ImportInsertHandler(
             return // Import already exists
         }
         
-        // Find the best position to insert the import
-        val insertPosition = findImportInsertPosition(document)
-        
         // Insert the import statement
-        document.insertString(insertPosition, importStatement)
+        document.insertString(0, importStatement)
         
         // Commit the document changes
         PsiDocumentManager.getInstance(psiFile.project).commitDocument(document)
-    }
-    
-    private fun findImportInsertPosition(document: Document): Int {
-        val text = document.text
-        val lines = text.lines()
-        
-        var insertLine = 0
-        
-        // Find the last import statement
-        for (i in lines.indices) {
-            val line = lines[i].trim()
-            if (line.startsWith("import ")) {
-                insertLine = i + 1
-            } else if (line.isNotEmpty() && !line.startsWith("//") && !line.startsWith("/*")) {
-                // Found first non-import, non-comment line
-                break
-            }
-        }
-        
-        // Convert line number to character offset
-        var offset = 0
-        for (i in 0 until insertLine) {
-            if (i < lines.size) {
-                offset += lines[i].length + 1 // +1 for newline
-            }
-        }
-        
-        return offset
     }
 }
