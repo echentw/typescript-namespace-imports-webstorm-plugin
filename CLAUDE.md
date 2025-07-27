@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## In-progress plan
+
+See plan.md
+
 ## Project Overview
 
 This is an IntelliJ Platform plugin project for TypeScript namespace imports, built using Kotlin and the IntelliJ Platform Gradle Plugin. The project is based on the IntelliJ Platform Plugin Template and targets IntelliJ IDEA Community Edition (IC) platform version 2024.3.6.
