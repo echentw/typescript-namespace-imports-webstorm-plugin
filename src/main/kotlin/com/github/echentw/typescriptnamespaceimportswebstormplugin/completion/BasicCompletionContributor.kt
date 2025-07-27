@@ -96,7 +96,7 @@ class ImportInsertHandler(
         val importStatement = "import * as $moduleName from '$modulePath';\n"
         
         // Check if import already exists
-        if (document.text.contains("import * as $moduleName from")) {
+        if (document.text.contains(importStatement)) {
             return // Import already exists
         }
         
