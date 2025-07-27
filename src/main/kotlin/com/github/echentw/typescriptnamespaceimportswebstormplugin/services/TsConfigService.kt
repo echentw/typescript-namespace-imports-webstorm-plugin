@@ -132,28 +132,24 @@ class TsConfigService(private val project: Project) {
         tsConfigs.clear()
         
         // Find all tsconfig.json files in the project
-        val configFiles = FilenameIndex.getFilesByName(
-            project,
+        val configFiles = FilenameIndex.getVirtualFilesByName(
             "tsconfig.json",
             GlobalSearchScope.projectScope(project)
         )
         
-        for (psiFile in configFiles) {
-            val configFile = psiFile.virtualFile
-            if (configFile != null) {
-                try {
-                    val configInfo = parseTsConfig(configFile)
-                    if (configInfo != null) {
-                        // Store by directory path for quick lookup
-                        tsConfigs[configFile.parent.path] = configInfo
-                        println("Found tsconfig.json: ${configFile.path}")
-                        println("  baseUrl: ${configInfo.baseUrl}")
-                        println("  paths: ${configInfo.paths?.keys}")
-                        println("  outDir: ${configInfo.outDir}")
-                    }
-                } catch (e: Exception) {
-                    println("Error parsing tsconfig.json at ${configFile.path}: ${e.message}")
+        for (configFile in configFiles) {
+            try {
+                val configInfo = parseTsConfig(configFile)
+                if (configInfo != null) {
+                    // Store by directory path for quick lookup
+                    tsConfigs[configFile.parent.path] = configInfo
+                    println("Found tsconfig.json: ${configFile.path}")
+                    println("  baseUrl: ${configInfo.baseUrl}")
+                    println("  paths: ${configInfo.paths?.keys}")
+                    println("  outDir: ${configInfo.outDir}")
                 }
+            } catch (e: Exception) {
+                println("Error parsing tsconfig.json at ${configFile.path}: ${e.message}")
             }
         }
         
