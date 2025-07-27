@@ -34,10 +34,10 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 - [x] Store mapping of prefix → file path
 
 ### Phase 3: Basic Import Suggestions
-**Step 5: Simple Import Completion**
-- [ ] When user types "mapU", suggest `import * as mapUtil from './path/to/file'`
-- [ ] Use relative paths for now (no tsconfig.json parsing yet)
-- [ ] Test with a few hardcoded examples
+**Step 5: Simple Import Completion** ✅
+- [x] When user types "mapU", suggest `import * as mapUtil from './path/to/file'`
+- [x] Use relative paths for now (no tsconfig.json parsing yet)
+- [x] Test with a few hardcoded examples
 
 ### Phase 4: TypeScript Project Integration
 **Step 6: Find tsconfig.json Files**
@@ -73,8 +73,8 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 - [ ] Configuration panel in IDE settings
 
 ## Current Status
-✅ **Completed**: Step 1 - Basic completion contributor
-🎯 **Ready for**: Step 5 - Simple Import Completion
+✅ **Completed**: Step 5 - Simple Import Completion  
+🎯 **Ready for**: Step 6 - Find tsconfig.json Files
 
 ## Notes
 - Starting with simple "asdf!" completion to learn IntelliJ Platform plugin development

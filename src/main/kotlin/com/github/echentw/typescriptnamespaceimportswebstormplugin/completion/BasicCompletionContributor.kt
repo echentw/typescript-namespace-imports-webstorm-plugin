@@ -39,17 +39,29 @@ class BasicCompletionContributor : CompletionContributor() {
                     }
 
                     // Add completion suggestions based on module names
-                    modulesByPrefix[prefix.substring(0, 1)]?.forEach { moduleInfo ->
-                        val importStatement = "import * as ${moduleInfo.moduleName} from '${moduleInfo.filePath}'"
-                        result.addElement(
-                            LookupElementBuilder.create(importStatement)
-                                .withPresentableText(moduleInfo.moduleName)
-                                .withTailText(" from ${moduleInfo.filePath}")
-                                .withTypeText("namespace import")
-                        )
+                    // Iterate through all modules and check if any start with the prefix
+                    modulesByPrefix.values.flatten().forEach { moduleInfo ->
+                        if (moduleInfo.moduleName.lowercase().startsWith(prefix)) {
+                            // Generate relative import path (for now using full path)
+                            val relativePath = generateRelativePath(moduleInfo.filePath)
+                            val importStatement = "import * as ${moduleInfo.moduleName} from '$relativePath'"
+                            
+                            result.addElement(
+                                LookupElementBuilder.create(importStatement)
+                                    .withPresentableText(moduleInfo.moduleName)
+                                    .withTailText(" from $relativePath")
+                                    .withTypeText("namespace import")
+                            )
+                        }
                     }
                 }
             }
         )
+    }
+    
+    private fun generateRelativePath(filePath: String): String {
+        // For now, just use the file path without extension
+        // TODO: This should be made relative to the current file and respect tsconfig paths
+        return filePath.substringBeforeLast(".").replace("/Users/ericchen/Documents/github/typescript-namespace-imports-webstorm-plugin/", "./")
     }
 }
