@@ -65,7 +65,7 @@ class TsConfigService(private val project: Project) {
     private fun isTsConfigFile(event: VFileEvent): Boolean {
         val fileName = when (event) {
             is VFileCreateEvent -> event.childName
-            is VFileDeleteEvent -> event.file?.name
+            is VFileDeleteEvent -> event.file.name
             is VFileMoveEvent -> event.file.name
             is VFileContentChangeEvent -> event.file.name
             else -> null
@@ -75,7 +75,7 @@ class TsConfigService(private val project: Project) {
     
     private fun isInProjectScope(event: VFileEvent): Boolean {
         val file = when (event) {
-            is VFileCreateEvent -> event.parent?.findChild(event.childName)
+            is VFileCreateEvent -> event.parent.findChild(event.childName)
             is VFileDeleteEvent -> event.file
             is VFileMoveEvent -> event.file
             is VFileContentChangeEvent -> event.file
