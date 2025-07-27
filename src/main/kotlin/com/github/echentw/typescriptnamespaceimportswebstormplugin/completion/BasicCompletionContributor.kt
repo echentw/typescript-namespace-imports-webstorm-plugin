@@ -30,14 +30,6 @@ class BasicCompletionContributor : CompletionContributor() {
                     // Get the prefix being typed
                     val prefix = result.prefixMatcher.prefix.lowercase()
 
-                    // Still keep the original "asdf" test for now
-                    if ("asdf".startsWith(prefix)) {
-                        result.addElement(
-                            LookupElementBuilder.create("asdf!!!")
-                                .withPresentableText("asdf!!!")
-                                .withTailText(" (Basic completion test)")
-                        )
-                    }
 
                     // Check if prefix is empty to avoid issues
                     if (prefix.isEmpty()) {

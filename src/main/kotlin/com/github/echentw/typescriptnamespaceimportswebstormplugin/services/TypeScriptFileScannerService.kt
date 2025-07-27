@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 data class ModuleInfo(
     val moduleName: String,
-    val filePath: String,
     val virtualFile: VirtualFile
 )
 
@@ -53,16 +52,14 @@ class TypeScriptFileScannerService(private val project: Project) {
             
             // Extract module name from file path
             val moduleName = makeModuleName(path)
-            val moduleInfo = ModuleInfo(moduleName, path, file)
+            val moduleInfo = ModuleInfo(moduleName, file)
             
             // Add to prefix mapping for all possible prefixes
             val prefix = moduleName.substring(0, 1).lowercase()
             modulesByFirstLetter.computeIfAbsent(prefix) { mutableListOf() }.add(moduleInfo)
 
-            println("Found TypeScript file: $path -> module name: $moduleName")
         }
         
-        println("Total module prefixes: ${modulesByFirstLetter.size}")
     }
 }
 

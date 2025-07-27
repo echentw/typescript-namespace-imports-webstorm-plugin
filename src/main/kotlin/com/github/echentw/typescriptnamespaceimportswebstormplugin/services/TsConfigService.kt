@@ -28,9 +28,6 @@ class TsConfigService(private val project: Project) {
         scanForTsConfigs()
     }
     
-    fun getAllTsConfigs(): List<TsConfigInfo> {
-        return tsConfigs.values.toList()
-    }
     
     fun getTsConfigForFile(file: VirtualFile): TsConfigInfo? {
         // Find the closest tsconfig.json by walking up the directory tree
@@ -120,13 +117,8 @@ class TsConfigService(private val project: Project) {
      */
     private fun removeJsonComments(json: String): String {
         return json.lines().joinToString("\n") { line ->
-            // Remove single-line comments
             val commentIndex = line.indexOf("//")
-            if (commentIndex >= 0) {
-                line.substring(0, commentIndex)
-            } else {
-                line
-            }
+            if (commentIndex >= 0) line.substring(0, commentIndex) else line
         }
     }
     
