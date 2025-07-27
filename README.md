@@ -21,7 +21,7 @@
 
 This plugin helps you with namespace imports when writing code.
 
-A [namespace import](http://exploringjs.com/es6/ch_modules.html#_importing-styles) is an import like:
+A [namespace import](https://exploringjs.com/es6/ch_modules.html#_importing-styles) is an import like:
 ```
 import * as moduleName from 'path/to/module_name';
 ```
