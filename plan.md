@@ -59,9 +59,12 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 - [ ] Add configuration options for custom exclusions
 
 **Step 9: Performance & Caching**
-- [ ] Cache file scans and tsconfig parsing
-- [ ] Incremental updates when files change
-- [ ] Debounce file system watchers
+- [x] Cache file scans and tsconfig parsing (services cache in init blocks)
+- [ ] Move scanning from lazy service initialization to project startup
+- [ ] Add file system watchers for incremental updates when files change
+- [ ] Debounce file system watchers to avoid excessive re-scanning
+- [ ] Background indexing to avoid blocking UI during initial scan
+- [ ] Optimize completion performance (currently just reads from pre-built cache)
 
 ### Phase 6: Polish & Edge Cases
 **Step 10: Enhanced Matching**
@@ -76,7 +79,8 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 
 ## Current Status
 ✅ **Completed**: Step 7 - Path Resolution (including Steps 6-7)  
-🎯 **Ready for**: Step 8 - Advanced Filtering (partially complete) or Step 9 - Performance & Caching
+⏳ **In Progress**: Step 9 - Performance & Caching (basic caching ✅, need startup optimization)  
+🎯 **Next Priority**: Move file scanning from lazy initialization to project startup
 
 ## Notes
 - Starting with simple "asdf!" completion to learn IntelliJ Platform plugin development
