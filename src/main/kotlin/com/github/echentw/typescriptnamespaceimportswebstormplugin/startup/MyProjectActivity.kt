@@ -14,19 +14,21 @@ class MyProjectActivity : ProjectActivity {
         
         // Initialize services in background to avoid blocking UI
         ApplicationManager.getApplication().executeOnPooledThread {
-            try {
-                val tsConfigService = project.getService(TsConfigService::class.java)
-                val fileScanner = project.getService(TypeScriptFileScannerService::class.java)
-                
-                // Initialize TsConfig service first (needed for file filtering)
-                tsConfigService.initialize()
-                
-                // Then initialize file scanner
-                fileScanner.initialize()
-                
-                thisLogger().info("TypeScript Namespace Imports plugin initialization complete for project: ${project.name}")
-            } catch (e: Exception) {
-                thisLogger().error("Failed to initialize TypeScript Namespace Imports plugin", e)
+            ApplicationManager.getApplication().runReadAction {
+                try {
+                    val tsConfigService = project.getService(TsConfigService::class.java)
+                    val fileScanner = project.getService(TypeScriptFileScannerService::class.java)
+                    
+                    // Initialize TsConfig service first (needed for file filtering)
+                    tsConfigService.initialize()
+                    
+                    // Then initialize file scanner
+                    fileScanner.initialize()
+                    
+                    thisLogger().info("TypeScript Namespace Imports plugin initialization complete for project: ${project.name}")
+                } catch (e: Exception) {
+                    thisLogger().error("Failed to initialize TypeScript Namespace Imports plugin", e)
+                }
             }
         }
     }
