@@ -62,9 +62,12 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 - [x] Cache file scans and tsconfig parsing (services cache in init blocks)
 - [x] Move scanning from lazy service initialization to project startup
 - [x] Add file system watchers for incremental updates when files change
-- [x] Debounce file system watchers to avoid excessive re-scanning (500ms for TS files, 1000ms for tsconfig)
+- [x] Smart debouncing - immediate processing for TS files (incremental), 1000ms for tsconfig (full rescan)
 - [x] Background indexing to avoid blocking UI during initial scan
 - [x] Optimize completion performance (reads from pre-built cache)
+- [x] **Incremental file updates** - add/remove individual files instead of full rescans
+- [x] **Smart event handling** - create/delete/move/rename operations update cache incrementally
+- [x] **Optimal event processing** - process entire event batch in single background task
 
 ### Phase 6: Polish & Edge Cases
 **Step 10: Enhanced Matching**

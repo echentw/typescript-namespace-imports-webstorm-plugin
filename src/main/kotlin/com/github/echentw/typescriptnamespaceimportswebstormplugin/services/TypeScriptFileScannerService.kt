@@ -28,8 +28,7 @@ class TypeScriptFileScannerService(private val project: Project) {
     
     private val modulesByFirstLetter = ConcurrentHashMap<String, MutableList<ModuleInfo>>()
     private var isInitialized = false
-    private val debounceExecutor = Executors.newSingleThreadScheduledExecutor()
-    private var pendingRescanTask: java.util.concurrent.ScheduledFuture<*>? = null
+    private val executor = Executors.newSingleThreadExecutor()
     
     fun initialize() {
         if (!isInitialized) {
@@ -55,7 +54,9 @@ class TypeScriptFileScannerService(private val project: Project) {
                 
                 if (relevantEvents.isNotEmpty()) {
                     thisLogger().debug("TypeScript files changed: ${relevantEvents.size} events")
-                    scheduleRescan()
+                    executor.submit {
+                        processEvents(relevantEvents)
+                    }
                 }
             }
         })
@@ -87,21 +88,78 @@ class TypeScriptFileScannerService(private val project: Project) {
         } ?: false
     }
     
-    private fun scheduleRescan() {
-        // Cancel any pending rescan
-        pendingRescanTask?.cancel(false)
-        
-        // Schedule a new rescan with debouncing (wait 500ms after last change)
-        pendingRescanTask = debounceExecutor.schedule({
-            ApplicationManager.getApplication().runReadAction {
-                try {
-                    thisLogger().info("Rescanning TypeScript files due to file system changes")
-                    scanForModules()
-                } catch (e: Exception) {
-                    thisLogger().error("Error during TypeScript file rescan", e)
+    private fun processEvents(events: List<VFileEvent>) {
+        ApplicationManager.getApplication().runReadAction {
+            try {
+                val tsConfigService = project.getService(TsConfigService::class.java)
+                
+                for (event in events) {
+                    when (event) {
+                        is VFileCreateEvent -> {
+                            val file = event.parent.findChild(event.childName)
+                            if (file != null) {
+                                addFile(file, tsConfigService)
+                            }
+                        }
+                        is VFileDeleteEvent -> {
+                            removeFile(event.file)
+                        }
+                        is VFileMoveEvent -> {
+                            // Remove from old location, add to new location
+                            removeFile(event.file)
+                            addFile(event.file, tsConfigService)
+                        }
+                        is VFilePropertyChangeEvent -> {
+                            if (event.propertyName == VirtualFile.PROP_NAME) {
+                                // File renamed - treat as move
+                                removeFile(event.file)
+                                addFile(event.file, tsConfigService)
+                            }
+                        }
+                    }
+                    
+                    thisLogger().debug("Processed event: ${event.javaClass.simpleName} for ${getEventFileName(event)}")
                 }
+            } catch (e: Exception) {
+                thisLogger().error("Error processing TypeScript file events batch", e)
             }
-        }, 500, TimeUnit.MILLISECONDS)
+        }
+    }
+    
+    private fun getEventFileName(event: VFileEvent): String {
+        return when (event) {
+            is VFileCreateEvent -> event.childName
+            is VFileDeleteEvent -> event.file?.name ?: "unknown"
+            is VFileMoveEvent -> event.file.name
+            is VFilePropertyChangeEvent -> event.file.name
+            else -> "unknown"
+        }
+    }
+    
+    private fun addFile(file: VirtualFile, tsConfigService: TsConfigService) {
+        val path = file.path
+        
+        // Apply same filtering as full scan
+        if (shouldIgnoreFile(path) || shouldIgnoreFileBasedOnTsConfig(file, tsConfigService)) {
+            return
+        }
+        
+        val moduleName = makeModuleName(path)
+        val moduleInfo = ModuleInfo(moduleName, file)
+        val prefix = moduleName.substring(0, 1).lowercase()
+        
+        modulesByFirstLetter.computeIfAbsent(prefix) { mutableListOf() }.add(moduleInfo)
+        thisLogger().debug("Added TypeScript file: $path -> module name: $moduleName")
+    }
+    
+    private fun removeFile(file: VirtualFile) {
+        val path = file.path
+        val moduleName = makeModuleName(path)
+        val prefix = moduleName.substring(0, 1).lowercase()
+        
+        modulesByFirstLetter[prefix]?.removeAll { it.virtualFile.path == path }
+
+        thisLogger().debug("Removed TypeScript file: $path -> module name: $moduleName")
     }
     
     fun getModulesByFirstLetter(): Map<String, List<ModuleInfo>> {
@@ -124,15 +182,11 @@ class TypeScriptFileScannerService(private val project: Project) {
             val path = file.path
             
             // Skip node_modules and other irrelevant directories
-            if (shouldIgnoreFile(path)) {
-                continue
-            }
-            
             // Skip files in TypeScript output directories
-            if (shouldIgnoreFileBasedOnTsConfig(file, tsConfigService)) {
+            if (shouldIgnoreFile(path) || shouldIgnoreFileBasedOnTsConfig(file, tsConfigService)) {
                 continue
             }
-            
+
             // Extract module name from file path
             val moduleName = makeModuleName(path)
             val moduleInfo = ModuleInfo(moduleName, file)

@@ -91,18 +91,24 @@ class TsConfigService(private val project: Project) {
         // Cancel any pending rescan
         pendingRescanTask?.cancel(false)
         
-        // Schedule a new rescan with debouncing (wait 1000ms after last change for tsconfig)
+        // Schedule incremental update with debouncing (wait 1000ms after last change for tsconfig)
         pendingRescanTask = debounceExecutor.schedule({
             ApplicationManager.getApplication().runReadAction {
                 try {
-                    thisLogger().info("Rescanning tsconfig.json files due to file system changes")
+                    thisLogger().info("Processing tsconfig.json changes - triggering incremental TypeScript rescan")
+                    
+                    // For tsconfig changes, we need to do a full TypeScript rescan since
+                    // filtering rules might have changed, affecting which files are included
+                    val fileScanner = project.getService(TypeScriptFileScannerService::class.java)
+                    
+                    // First update tsconfig data
                     scanForTsConfigs()
                     
-                    // Also trigger TypeScript file rescan since tsconfig changes affect filtering
-                    val fileScanner = project.getService(TypeScriptFileScannerService::class.java)
+                    // Then trigger a full TypeScript rescan (can't be incremental since 
+                    // tsconfig changes affect which files should be included/excluded)
                     fileScanner.forceRescan()
                 } catch (e: Exception) {
-                    thisLogger().error("Error during tsconfig.json rescan", e)
+                    thisLogger().error("Error during tsconfig.json update", e)
                 }
             }
         }, 1000, TimeUnit.MILLISECONDS)
