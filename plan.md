@@ -17,16 +17,16 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 - [x] Simply adds "!" at the end → "asdf!"
 - [x] Learn the IntelliJ completion API basics
 
-**Step 2: Expand Basic Completion**
-- [ ] Make it work with any 4-letter prefix (not just "asdf")
-- [ ] Add multiple completion options
-- [ ] Learn about completion contexts and filtering
+**Step 2: Expand Basic Completion** ❌ (Won't do)
+- [x] ~~Make it work with any 4-letter prefix (not just "asdf")~~ - Skipping to focus on core functionality
+- [x] ~~Add multiple completion options~~ - Skipping to focus on core functionality  
+- [x] ~~Learn about completion contexts and filtering~~ - Skipping to focus on core functionality
 
 ### Phase 2: TypeScript File Discovery
-**Step 3: File System Scanning**
-- [ ] Scan project for all `.ts` and `.tsx` files
-- [ ] Store file paths in a simple list/map
-- [ ] Ignore basic patterns like `node_modules/` for now
+**Step 3: File System Scanning** ✅
+- [x] Scan project for all `.ts` and `.tsx` files
+- [x] Store file paths in a simple list/map
+- [x] Ignore basic patterns like `node_modules/` for now
 
 **Step 4: Extract Module Names**
 - [ ] Parse file paths to generate potential import names
@@ -74,7 +74,7 @@ Create a WebStorm plugin that helps with autocompleting namespace imports in Typ
 
 ## Current Status
 ✅ **Completed**: Step 1 - Basic completion contributor
-🎯 **Ready for**: Step 2 - Expand to any 4-letter prefix
+🎯 **Ready for**: Step 4 - Extract Module Names
 
 ## Notes
 - Starting with simple "asdf!" completion to learn IntelliJ Platform plugin development
