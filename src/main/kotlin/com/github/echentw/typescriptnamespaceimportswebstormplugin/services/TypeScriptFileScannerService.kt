@@ -12,6 +12,10 @@ import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.roots.ModuleRootEvent
+import com.intellij.openapi.roots.ModuleRootListener
+import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.util.messages.Topic
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
 import java.util.concurrent.ConcurrentHashMap
@@ -56,6 +60,18 @@ class TypeScriptFileScannerService(private val project: Project) {
                     thisLogger().debug("TypeScript files changed: ${relevantEvents.size} events")
                     executor.submit {
                         processEvents(relevantEvents)
+                    }
+                }
+            }
+        })
+        
+        // Listen for project structure changes (exclusions, source roots, etc.)
+        connection.subscribe(ModuleRootListener.TOPIC, object : ModuleRootListener {
+            override fun rootsChanged(event: ModuleRootEvent) {
+                thisLogger().debug("Project roots changed, rescanning TypeScript files")
+                executor.submit {
+                    ApplicationManager.getApplication().runReadAction {
+                        scanForModules()
                     }
                 }
             }
