@@ -16,18 +16,18 @@ data class ModuleInfo(
 @Service(Service.Level.PROJECT)
 class TypeScriptFileScannerService(private val project: Project) {
     
-    private val moduleByFirstLetter = ConcurrentHashMap<String, MutableList<ModuleInfo>>()
+    private val modulesByFirstLetter = ConcurrentHashMap<String, MutableList<ModuleInfo>>()
     
     init {
         scanForModules()
     }
     
-    fun getModulesByPrefix(): Map<String, List<ModuleInfo>> {
-        return moduleByFirstLetter.mapValues { it.value.toList() }
+    fun getModulesByFirstLetter(): Map<String, List<ModuleInfo>> {
+        return modulesByFirstLetter.mapValues { it.value.toList() }
     }
     
     private fun scanForModules() {
-        moduleByFirstLetter.clear()
+        modulesByFirstLetter.clear()
         
         // Find all .ts and .tsx files in the project
         val tsFiles = FilenameIndex.getAllFilesByExt(project, "ts", GlobalSearchScope.projectScope(project))
@@ -44,17 +44,17 @@ class TypeScriptFileScannerService(private val project: Project) {
             }
             
             // Extract module name from file path
-            val moduleName = extractModuleName(path)
+            val moduleName = makeModuleName(path)
             val moduleInfo = ModuleInfo(moduleName, path, file)
             
             // Add to prefix mapping for all possible prefixes
             val prefix = moduleName.substring(0, 1).lowercase()
-            moduleByFirstLetter.computeIfAbsent(prefix) { mutableListOf() }.add(moduleInfo)
+            modulesByFirstLetter.computeIfAbsent(prefix) { mutableListOf() }.add(moduleInfo)
 
             println("Found TypeScript file: $path -> module name: $moduleName")
         }
         
-        println("Total module prefixes: ${moduleByFirstLetter.size}")
+        println("Total module prefixes: ${modulesByFirstLetter.size}")
     }
 }
 
@@ -67,7 +67,7 @@ private fun shouldIgnoreFile(path: String): Boolean {
             path.contains("/.idea/")
 }
 
-private fun extractModuleName(filePath: String): String {
+private fun makeModuleName(filePath: String): String {
     // Get the filename without extension
     val fileName = filePath.substringAfterLast("/").substringBeforeLast(".")
 
