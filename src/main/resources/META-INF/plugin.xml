@@ -6,10 +6,7 @@
 
     <depends>com.intellij.modules.platform</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
-
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.echentw.typescriptnamespaceimportswebstormplugin.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
         <postStartupActivity implementation="com.github.echentw.typescriptnamespaceimportswebstormplugin.startup.MyProjectActivity" />
         <completion.contributor language="TypeScript" implementationClass="com.github.echentw.typescriptnamespaceimportswebstormplugin.completion.BasicCompletionContributor"/>
     </extensions>
