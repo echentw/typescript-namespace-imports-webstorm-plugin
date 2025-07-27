@@ -20,9 +20,12 @@ class BasicCompletionContributor : CompletionContributor() {
                 ) {
                     // Get the prefix being typed
                     val prefix = result.prefixMatcher.prefix
-                    
+
+                    println("hello");
+                    println("hi");
+
                     // Check if the prefix is "asdf"
-                    if (prefix.contains("asdf")) {
+                    if (prefix.contains("a")) {
                         result.addElement(
                             LookupElementBuilder.create("asdf!")
                                 .withPresentableText("asdf!")
