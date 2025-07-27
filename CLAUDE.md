@@ -66,3 +66,13 @@ This is a template-based IntelliJ Platform plugin that provides:
 - Project-level services for plugin functionality
 
 The plugin follows IntelliJ Platform plugin development best practices with proper separation of concerns between UI components, services, and configuration.
+
+## Learnings
+
+- The `addCompletions()` method in a `CompletionContributor` does NOT get called for every character the user types. Instead, it follows a two-phase process:
+  1. **Generation Phase**: `addCompletions()` is called when the user starts typing (typically on the first character)
+  2. **Filtering Phase**: As the user continues typing, IntelliJ filters the existing completion results without calling `addCompletions()` again
+  - Practical Implications:
+    - ❌ `if (prefix.contains("asdf"))` - Won't work because by the time user types "asdf", the method isn't being called
+    - ✅ `if ("asdf".startsWith(prefix))` - Works because it catches partial prefixes like "a", "as", "asd" during the initial generation phase
+- Use `println()` statements that appear in the `./gradlew runIde` terminal output
