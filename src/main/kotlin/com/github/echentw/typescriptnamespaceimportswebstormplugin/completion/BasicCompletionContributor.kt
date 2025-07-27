@@ -37,9 +37,9 @@ class BasicCompletionContributor : CompletionContributor() {
                                 .withTailText(" (Basic completion test)")
                         )
                     }
-                    
+
                     // Add completion suggestions based on module names
-                    modulesByPrefix[prefix]?.forEach { moduleInfo ->
+                    modulesByPrefix[prefix.substring(0, 1)]?.forEach { moduleInfo ->
                         val importStatement = "import * as ${moduleInfo.moduleName} from '${moduleInfo.filePath}'"
                         result.addElement(
                             LookupElementBuilder.create(importStatement)
