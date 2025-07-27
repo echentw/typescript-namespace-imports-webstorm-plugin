@@ -16,24 +16,18 @@ data class ModuleInfo(
 @Service(Service.Level.PROJECT)
 class TypeScriptFileScannerService(private val project: Project) {
     
-    private val tsFileByPath = ConcurrentHashMap<String, VirtualFile>()
-    private val modulesByPrefix = ConcurrentHashMap<String, MutableList<ModuleInfo>>()
+    private val moduleByFirstLetter = ConcurrentHashMap<String, MutableList<ModuleInfo>>()
     
     init {
-        scanForTsFiles()
-    }
-    
-    fun getTsFileByPath(): Map<String, VirtualFile> {
-        return tsFileByPath.toMap()
+        scanForModules()
     }
     
     fun getModulesByPrefix(): Map<String, List<ModuleInfo>> {
-        return modulesByPrefix.mapValues { it.value.toList() }
+        return moduleByFirstLetter.mapValues { it.value.toList() }
     }
     
-    private fun scanForTsFiles() {
-        tsFileByPath.clear()
-        modulesByPrefix.clear()
+    private fun scanForModules() {
+        moduleByFirstLetter.clear()
         
         // Find all .ts and .tsx files in the project
         val tsFiles = FilenameIndex.getAllFilesByExt(project, "ts", GlobalSearchScope.projectScope(project))
@@ -49,23 +43,18 @@ class TypeScriptFileScannerService(private val project: Project) {
                 continue
             }
             
-            tsFileByPath[path] = file
-            
             // Extract module name from file path
             val moduleName = extractModuleName(path)
             val moduleInfo = ModuleInfo(moduleName, path, file)
             
             // Add to prefix mapping for all possible prefixes
-            for (i in 1..moduleName.length) {
-                val prefix = moduleName.substring(0, i).lowercase()
-                modulesByPrefix.computeIfAbsent(prefix) { mutableListOf() }.add(moduleInfo)
-            }
-            
+            val prefix = moduleName.substring(0, 1).lowercase()
+            moduleByFirstLetter.computeIfAbsent(prefix) { mutableListOf() }.add(moduleInfo)
+
             println("Found TypeScript file: $path -> module name: $moduleName")
         }
         
-        println("Total TypeScript files found: ${tsFileByPath.size}")
-        println("Total module prefixes: ${modulesByPrefix.size}")
+        println("Total module prefixes: ${moduleByFirstLetter.size}")
     }
 }
 

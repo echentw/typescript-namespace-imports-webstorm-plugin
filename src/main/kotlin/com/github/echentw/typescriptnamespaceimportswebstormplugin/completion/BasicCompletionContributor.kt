@@ -43,8 +43,8 @@ class BasicCompletionContributor : CompletionContributor() {
                         val importStatement = "import * as ${moduleInfo.moduleName} from '${moduleInfo.filePath}'"
                         result.addElement(
                             LookupElementBuilder.create(importStatement)
-                                .withPresentableText("${moduleInfo.moduleName}")
-                                .withTailText(" from ${moduleInfo.virtualFile.name}")
+                                .withPresentableText(moduleInfo.moduleName)
+                                .withTailText(" from ${moduleInfo.filePath}")
                                 .withTypeText("namespace import")
                         )
                     }
