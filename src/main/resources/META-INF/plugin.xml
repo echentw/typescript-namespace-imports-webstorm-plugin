@@ -11,6 +11,8 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow factoryClass="com.github.echentw.typescriptnamespaceimportswebstormplugin.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
         <postStartupActivity implementation="com.github.echentw.typescriptnamespaceimportswebstormplugin.startup.MyProjectActivity" />
-        <completion.contributor language="any" implementationClass="com.github.echentw.typescriptnamespaceimportswebstormplugin.completion.BasicCompletionContributor"/>
+        <completion.contributor language="TEXT" implementationClass="com.github.echentw.typescriptnamespaceimportswebstormplugin.completion.BasicCompletionContributor"/>
+        <completion.contributor language="TypeScript" implementationClass="com.github.echentw.typescriptnamespaceimportswebstormplugin.completion.BasicCompletionContributor"/>
+        <completion.contributor language="JavaScript" implementationClass="com.github.echentw.typescriptnamespaceimportswebstormplugin.completion.BasicCompletionContributor"/>
     </extensions>
 </idea-plugin>
