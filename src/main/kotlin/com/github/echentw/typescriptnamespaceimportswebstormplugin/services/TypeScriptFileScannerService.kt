@@ -67,35 +67,35 @@ class TypeScriptFileScannerService(private val project: Project) {
         println("Total TypeScript files found: ${tsFileByPath.size}")
         println("Total module prefixes: ${modulesByPrefix.size}")
     }
-    
-    private fun shouldIgnoreFile(path: String): Boolean {
-        return path.contains("/node_modules/") ||
-               path.contains("/.git/") ||
-               path.contains("/build/") ||
-               path.contains("/dist/") ||
-               path.contains("/out/") ||
-               path.contains("/.idea/")
-    }
-    
-    private fun extractModuleName(filePath: String): String {
-        // Get the filename without extension
-        val fileName = filePath.substringAfterLast("/").substringBeforeLast(".")
-        
-        // Convert to camelCase
-        return toCamelCase(fileName)
-    }
-    
-    private fun toCamelCase(input: String): String {
-        // Handle different naming conventions: snake_case, kebab-case, etc.
-        return input.split("_", "-", ".")
-            .filter { it.isNotEmpty() }
-            .mapIndexed { index, part ->
-                if (index == 0) {
-                    part.lowercase()
-                } else {
-                    part.lowercase().replaceFirstChar { it.uppercase() }
-                }
+}
+
+private fun shouldIgnoreFile(path: String): Boolean {
+    return path.contains("/node_modules/") ||
+            path.contains("/.git/") ||
+            path.contains("/build/") ||
+            path.contains("/dist/") ||
+            path.contains("/out/") ||
+            path.contains("/.idea/")
+}
+
+private fun extractModuleName(filePath: String): String {
+    // Get the filename without extension
+    val fileName = filePath.substringAfterLast("/").substringBeforeLast(".")
+
+    // Convert to camelCase
+    return toCamelCase(fileName)
+}
+
+private fun toCamelCase(input: String): String {
+    // Handle different naming conventions: snake_case, kebab-case, etc.
+    return input.split("_", "-", ".")
+        .filter { it.isNotEmpty() }
+        .mapIndexed { index, part ->
+            if (index == 0) {
+                part.lowercase()
+            } else {
+                part.lowercase().replaceFirstChar { it.uppercase() }
             }
-            .joinToString("")
-    }
+        }
+        .joinToString("")
 }
