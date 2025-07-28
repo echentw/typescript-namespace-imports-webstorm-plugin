@@ -14,6 +14,8 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
+import de.marhali.json5.Json5
+import de.marhali.json5.exception.Json5Exception
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
@@ -33,7 +35,6 @@ data class TsConfigInfo(
 class TsConfigService(private val project: Project) {
     
     private val tsConfigs = ConcurrentHashMap<String, TsConfigInfo>()
-    private val gson = Gson()
     private var isInitialized = false
     private val debounceExecutor = Executors.newSingleThreadScheduledExecutor()
     private var pendingRescanTask: java.util.concurrent.ScheduledFuture<*>? = null
@@ -156,13 +157,32 @@ class TsConfigService(private val project: Project) {
         println("Total tsconfig.json files found: ${tsConfigs.size}")
     }
     
+    
     private fun parseTsConfig(configFile: VirtualFile): TsConfigInfo? {
         try {
             val content = String(configFile.contentsToByteArray())
             
-            // Parse JSON (handle comments by using a simple regex cleanup)
-            val cleanedContent = removeJsonComments(content)
-            val jsonObject = gson.fromJson(cleanedContent, JsonObject::class.java)
+            // Parse JSON5/JSONC (handles comments, trailing commas, and other features)
+            val json5Instance = Json5.builder { options ->
+                options.allowInvalidSurrogate()
+                    .quoteSingle()
+                    .trailingComma()
+                    .build()
+            }
+            // Parse JSON5, then try to serialize as standard JSON for Gson
+            val json5Element = json5Instance.parse(content)
+            
+            // Create a JSON5 instance configured to output standard JSON (no single quotes, etc.)
+            val standardJson5 = Json5.builder { options ->
+                // Don't call quoteSingle() or trailingComma() to keep standard JSON format
+                options.build()
+            }
+            
+            val jsonString = standardJson5.serialize(json5Element)
+            println("DEBUG: Converted JSON string: $jsonString")
+            
+            val gson = Gson()
+            val jsonObject = gson.fromJson(jsonString, JsonObject::class.java)
             
             val compilerOptions = jsonObject.getAsJsonObject("compilerOptions")
             
@@ -185,8 +205,8 @@ class TsConfigService(private val project: Project) {
                 rootDir = rootDir
             )
             
-        } catch (e: JsonSyntaxException) {
-            println("Invalid JSON in tsconfig.json: ${configFile.path}")
+        } catch (e: Json5Exception) {
+            println("Invalid JSON5 in tsconfig.json: ${configFile.path} - ${e.message}")
             return null
         } catch (e: Exception) {
             println("Error reading tsconfig.json: ${configFile.path} - ${e.message}")
@@ -194,15 +214,6 @@ class TsConfigService(private val project: Project) {
         }
     }
     
-    /**
-     * Simple comment removal for JSON (not perfect but handles basic cases)
-     */
-    private fun removeJsonComments(json: String): String {
-        return json.lines().joinToString("\n") { line ->
-            val commentIndex = line.indexOf("//")
-            if (commentIndex >= 0) line.substring(0, commentIndex) else line
-        }
-    }
     
     /**
      * Resolve a file path using TypeScript module resolution rules
