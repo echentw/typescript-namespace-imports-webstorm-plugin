@@ -55,16 +55,19 @@ class BasicCompletionContributor : CompletionContributor() {
                     if (currentFile != null) {
                         modulesByPrefix[letter]?.forEach { moduleInfo ->
                             if (moduleInfo.moduleName.lowercase().startsWith(prefix)) {
-                                // Use TsConfigService for proper path resolution
-                                val modulePath = tsConfigService.resolveModulePath(currentFile, moduleInfo.virtualFile)
+                                // Check if this file should be accessible from the current file's project context
+                                if (shouldIncludeFileInCompletion(currentFile, moduleInfo.virtualFile, tsConfigService)) {
+                                    // Use TsConfigService for proper path resolution
+                                    val modulePath = tsConfigService.resolveModulePath(currentFile, moduleInfo.virtualFile)
 
-                                result.addElement(
-                                    LookupElementBuilder.create(moduleInfo.moduleName)
-                                        .withPresentableText(moduleInfo.moduleName)
-                                        .withTailText(" from $modulePath")
-                                        .withTypeText("namespace import")
-                                        .withInsertHandler(ImportInsertHandler(moduleInfo.moduleName, modulePath))
-                                )
+                                    result.addElement(
+                                        LookupElementBuilder.create(moduleInfo.moduleName)
+                                            .withPresentableText(moduleInfo.moduleName)
+                                            .withTailText(" from $modulePath")
+                                            .withTypeText("namespace import")
+                                            .withInsertHandler(ImportInsertHandler(moduleInfo.moduleName, modulePath))
+                                    )
+                                }
                             }
                         }
                     }
@@ -106,4 +109,46 @@ class ImportInsertHandler(
         // Commit the document changes
         PsiDocumentManager.getInstance(psiFile.project).commitDocument(document)
     }
+}
+
+/**
+ * Determines if a target file should be included in completion suggestions from the current file.
+ * This enforces rootDir restrictions - only files under the current project's rootDir are included.
+ */
+private fun shouldIncludeFileInCompletion(
+    currentFile: VirtualFile,
+    targetFile: VirtualFile,
+    tsConfigService: TsConfigService
+): Boolean {
+    val currentTsConfig = tsConfigService.getTsConfigForFile(currentFile)
+    val targetTsConfig = tsConfigService.getTsConfigForFile(targetFile)
+    
+    // If current file has no tsconfig, include all files (fallback behavior)
+    if (currentTsConfig == null) {
+        return true
+    }
+    
+    // If target file has no tsconfig, exclude it (it's not part of any TS project)
+    if (targetTsConfig == null) {
+        return false
+    }
+    
+    // If both files are in the same TS project, they should already be filtered correctly
+    // by the scanner's shouldIgnoreFileBasedOnTsConfig logic
+    if (currentTsConfig == targetTsConfig) {
+        return true
+    }
+    
+    // Files from different TS projects: apply rootDir check for the target file
+    if (targetTsConfig.rootDir != null) {
+        val targetConfigDir = targetTsConfig.configFile.parent
+        val targetRootDir = targetConfigDir.findFileByRelativePath(targetTsConfig.rootDir)
+        
+        // Only include target file if it's under its project's rootDir
+        if (targetRootDir != null && !targetFile.path.startsWith(targetRootDir.path)) {
+            return false
+        }
+    }
+    
+    return true
 }
