@@ -138,18 +138,17 @@ class TsConfigService(private val project: Project) {
         )
         
         for (configFile in configFiles) {
-            try {
-                val configInfo = parseTsConfig(configFile)
-                if (configInfo != null) {
-                    // Store by directory path for quick lookup
-                    tsConfigs[configFile.parent.path] = configInfo
-                    println("Found tsconfig.json: ${configFile.path}")
-                    println("  baseUrl: ${configInfo.baseUrl}")
-                    println("  paths: ${configInfo.paths?.keys}")
-                    println("  outDir: ${configInfo.outDir}")
-                }
-            } catch (e: Exception) {
-                println("Error parsing tsconfig.json at ${configFile.path}: ${e.message}")
+            val result = parseTsConfig(configFile)
+            if (result.isSuccess) {
+                val configInfo = result.getOrThrow()
+                tsConfigs[configFile.parent.path] = configInfo
+                println("Found tsconfig.json: ${configFile.path}")
+                println("  baseUrl: ${configInfo.baseUrl}")
+                println("  paths: ${configInfo.paths?.keys}")
+                println("  outDir: ${configInfo.outDir}")
+            } else {
+                val error = result.exceptionOrNull()!!
+                println("Error parsing tsconfig.json at ${configFile.path}: ${error.message}")
             }
         }
         
@@ -157,10 +156,15 @@ class TsConfigService(private val project: Project) {
     }
     
     
-    private fun parseTsConfig(configFile: VirtualFile): TsConfigInfo? {
+    private fun parseTsConfig(configFile: VirtualFile): Result<TsConfigInfo> {
+        var content: String
         try {
-            val content = String(configFile.contentsToByteArray())
-            
+            content = String(configFile.contentsToByteArray())
+        } catch (e: Exception) {
+            return Result.failure(e);
+        }
+
+        try {
             // Parse JSON5/JSONC (handles comments, trailing commas, and other features)
             val json5Instance = Json5.builder { options ->
                 options.allowInvalidSurrogate()
@@ -172,15 +176,15 @@ class TsConfigService(private val project: Project) {
             val tsConfig = json5Instance.parse(content).asJson5Object
             val compilerOptionsElement = tsConfig.get("compilerOptions")
             
-            // Handle case where compilerOptions doesn't exist or isn't an object
+            // Handle case where compilerOptions doesn't exist
             if (compilerOptionsElement == null) {
-                return TsConfigInfo(
+                return Result.success(TsConfigInfo(
                     configFile = configFile,
                     baseUrl = null,
                     paths = null,
                     outDir = null,
                     rootDir = null
-                )
+                ))
             }
             
             val compilerOptions = compilerOptionsElement.asJson5Object
@@ -196,20 +200,15 @@ class TsConfigService(private val project: Project) {
                 entry.key to entry.value.asJson5Array.map { it.asString }
             }
 
-            return TsConfigInfo(
+            return Result.success(TsConfigInfo(
                 configFile = configFile,
                 baseUrl = baseUrl,
                 paths = paths,
                 outDir = outDir,
                 rootDir = rootDir
-            )
-            
+            ))
         } catch (e: Json5Exception) {
-            println("Invalid JSON5 in tsconfig.json: ${configFile.path} - ${e.message}")
-            return null
-        } catch (e: Exception) {
-            println("Error reading tsconfig.json: ${configFile.path} - ${e.message}")
-            return null
+            return Result.failure(e);
         }
     }
 
