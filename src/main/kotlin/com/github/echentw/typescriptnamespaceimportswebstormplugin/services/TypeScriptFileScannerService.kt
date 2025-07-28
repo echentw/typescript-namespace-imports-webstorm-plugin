@@ -228,12 +228,23 @@ private fun shouldIgnoreFile(path: String): Boolean {
 private fun shouldIgnoreFileBasedOnTsConfig(file: VirtualFile, tsConfigService: TsConfigService): Boolean {
     val tsConfig = tsConfigService.getTsConfigForFile(file)
     
-    if (tsConfig?.outDir != null) {
+    if (tsConfig != null) {
         val configDir = tsConfig.configFile.parent
-        val outDir = configDir.findFileByRelativePath(tsConfig.outDir)
         
-        if (outDir != null && file.path.startsWith(outDir.path)) {
-            return true
+        // Exclude files in output directory
+        if (tsConfig.outDir != null) {
+            val outDir = configDir.findFileByRelativePath(tsConfig.outDir)
+            if (outDir != null && file.path.startsWith(outDir.path)) {
+                return true
+            }
+        }
+        
+        // Only include files under rootDir if rootDir is specified
+        if (tsConfig.rootDir != null) {
+            val rootDir = configDir.findFileByRelativePath(tsConfig.rootDir)
+            if (rootDir != null && !file.path.startsWith(rootDir.path)) {
+                return true
+            }
         }
     }
     

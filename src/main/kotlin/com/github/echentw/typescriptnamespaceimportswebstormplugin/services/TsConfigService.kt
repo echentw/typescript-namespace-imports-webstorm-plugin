@@ -146,6 +146,7 @@ class TsConfigService(private val project: Project) {
                 println("  baseUrl: ${configInfo.baseUrl}")
                 println("  paths: ${configInfo.paths?.keys}")
                 println("  outDir: ${configInfo.outDir}")
+                println("  rootDir: ${configInfo.rootDir}")
             } else {
                 val error = result.exceptionOrNull()!!
                 println("Error parsing tsconfig.json at ${configFile.path}: ${error.message}")
