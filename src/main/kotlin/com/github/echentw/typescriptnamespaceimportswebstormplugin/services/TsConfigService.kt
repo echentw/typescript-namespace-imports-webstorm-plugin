@@ -170,14 +170,31 @@ class TsConfigService(private val project: Project) {
             }
 
             val tsConfig = json5Instance.parse(content).asJson5Object
-            val compilerOptions = tsConfig.getAsJson5Object("compilerOptions")
+            val compilerOptionsElement = tsConfig.get("compilerOptions")
+            
+            // Handle case where compilerOptions doesn't exist or isn't an object
+            if (compilerOptionsElement == null) {
+                return TsConfigInfo(
+                    configFile = configFile,
+                    baseUrl = null,
+                    paths = null,
+                    outDir = null,
+                    rootDir = null
+                )
+            }
+            
+            val compilerOptions = compilerOptionsElement.asJson5Object
 
-            val baseUrl = compilerOptions.getAsJson5Primitive("baseUrl").asString
-            val outDir = compilerOptions.getAsJson5Primitive("outDir").asString
-            val rootDir = compilerOptions.getAsJson5Primitive("rootDir").asString
-            val paths = compilerOptions.getAsJson5Object("paths")
-
-            val asdf = paths.entrySet()
+            // Extract properties safely with null checks  
+            val baseUrl = compilerOptions.get("baseUrl")?.asString
+            val outDir = compilerOptions.get("outDir")?.asString
+            val rootDir = compilerOptions.get("rootDir")?.asString
+            
+            // Extract paths mapping using entrySet()
+            val pathsElement = compilerOptions.get("paths")
+            val paths = pathsElement?.asJson5Object?.entrySet()?.associate { entry ->
+                entry.key to entry.value.asJson5Array.map { it.asString }
+            }
 
             return TsConfigInfo(
                 configFile = configFile,
