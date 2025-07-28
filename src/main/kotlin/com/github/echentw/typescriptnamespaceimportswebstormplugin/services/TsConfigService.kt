@@ -17,8 +17,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import de.marhali.json5.Json5
 import de.marhali.json5.exception.Json5Exception
 import com.google.gson.Gson
-import com.google.gson.JsonObject
-import com.google.gson.JsonSyntaxException
+import com.google.gson.reflect.TypeToken
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -169,34 +168,17 @@ class TsConfigService(private val project: Project) {
                     .trailingComma()
                     .build()
             }
-            // Parse JSON5, then try to serialize as standard JSON for Gson
-            val json5Element = json5Instance.parse(content)
-            
-            // Create a JSON5 instance configured to output standard JSON (no single quotes, etc.)
-            val standardJson5 = Json5.builder { options ->
-                // Don't call quoteSingle() or trailingComma() to keep standard JSON format
-                options.build()
-            }
-            
-            val jsonString = standardJson5.serialize(json5Element)
-            println("DEBUG: Converted JSON string: $jsonString")
-            
-            val gson = Gson()
-            val jsonObject = gson.fromJson(jsonString, JsonObject::class.java)
-            
-            val compilerOptions = jsonObject.getAsJsonObject("compilerOptions")
-            
-            val baseUrl = compilerOptions?.get("baseUrl")?.asString
-            val outDir = compilerOptions?.get("outDir")?.asString
-            val rootDir = compilerOptions?.get("rootDir")?.asString
-            
-            // Parse paths mapping
-            val paths = compilerOptions?.get("paths")?.asJsonObject?.let { pathsObj ->
-                pathsObj.entrySet().associate { (key, value) ->
-                    key to value.asJsonArray.map { it.asString }
-                }
-            }
-            
+
+            val tsConfig = json5Instance.parse(content).asJson5Object
+            val compilerOptions = tsConfig.getAsJson5Object("compilerOptions")
+
+            val baseUrl = compilerOptions.getAsJson5Primitive("baseUrl").asString
+            val outDir = compilerOptions.getAsJson5Primitive("outDir").asString
+            val rootDir = compilerOptions.getAsJson5Primitive("rootDir").asString
+            val paths = compilerOptions.getAsJson5Object("paths")
+
+            val asdf = paths.entrySet()
+
             return TsConfigInfo(
                 configFile = configFile,
                 baseUrl = baseUrl,
@@ -213,8 +195,7 @@ class TsConfigService(private val project: Project) {
             return null
         }
     }
-    
-    
+
     /**
      * Resolve a file path using TypeScript module resolution rules
      */
