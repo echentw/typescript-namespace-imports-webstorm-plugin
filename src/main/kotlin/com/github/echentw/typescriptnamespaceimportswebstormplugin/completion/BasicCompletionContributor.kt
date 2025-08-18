@@ -1,5 +1,6 @@
 package com.github.echentw.typescriptnamespaceimportswebstormplugin.completion
 
+import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.NamespaceImportCompletionServiceImpl
 import com.intellij.codeInsight.completion.*
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.codeInsight.lookup.LookupElement
@@ -30,7 +31,10 @@ class BasicCompletionContributor : CompletionContributor() {
                     val project = parameters.position.project
                     val fileScanner = project.getService(TypeScriptFileScannerService::class.java)
                     val tsConfigService = project.getService(TsConfigService::class.java)
-                    
+
+                    val asdf = project.getService(NamespaceImportCompletionServiceImpl::class.java)
+                    asdf.initialize()
+
                     // Ensure services are initialized (fallback for safety)
                     fileScanner.initialize()
                     tsConfigService.initialize()

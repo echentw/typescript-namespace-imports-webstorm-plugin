@@ -17,13 +17,10 @@ class MyProjectActivity : ProjectActivity {
             ApplicationManager.getApplication().runReadAction {
                 try {
                     val tsConfigService = project.getService(TsConfigService::class.java)
-                    val fileScanner = project.getService(TypeScriptFileScannerService::class.java)
-                    
-                    // Initialize TsConfig service first (needed for file filtering)
                     tsConfigService.initialize()
-                    
-                    // Then initialize file scanner
-                    fileScanner.initialize()
+
+                    val fileScannerService = project.getService(TypeScriptFileScannerService::class.java)
+                    fileScannerService.initialize()
                     
                     thisLogger().info("TypeScript Namespace Imports plugin initialization complete for project: ${project.name}")
                 } catch (e: Exception) {
