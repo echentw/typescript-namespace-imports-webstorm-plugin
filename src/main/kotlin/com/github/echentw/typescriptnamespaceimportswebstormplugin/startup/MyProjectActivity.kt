@@ -6,6 +6,7 @@ import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.application.ApplicationManager
 import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.TypeScriptFileScannerService
 import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.TsConfigService
+import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.NamespaceImportCompletionService
 
 class MyProjectActivity : ProjectActivity {
 
@@ -16,6 +17,9 @@ class MyProjectActivity : ProjectActivity {
         ApplicationManager.getApplication().executeOnPooledThread {
             ApplicationManager.getApplication().runReadAction {
                 try {
+                    val service = project.getService(NamespaceImportCompletionService::class.java)
+                    service.initialize()
+
                     val tsConfigService = project.getService(TsConfigService::class.java)
                     tsConfigService.initialize()
 

@@ -32,8 +32,14 @@ data class ModuleForRelativeImport(
 typealias TsFilePath = String
 typealias TsProjectPath = String
 
+data class ModuleForCompletion(
+    val moduleName: String,
+    val importPath: String,
+)
+
 interface NamespaceImportCompletionService {
     fun initialize()
+    fun getModulesByFirstLetter(letter: Char): Array<ModuleForCompletion>
 }
 
 @Service(Service.Level.PROJECT)
@@ -43,7 +49,10 @@ class NamespaceImportCompletionServiceImpl(private val project: Project): Namesp
     private val ownerTsProjectPathByTsFilePath: Map<TsFilePath, TsProjectPath> = ConcurrentHashMap()
 
     override fun initialize() {
-        println("hiiiiiiiiiiiiiiii")
+    }
+
+    override fun getModulesByFirstLetter(letter: Char): Array<ModuleForCompletion> {
+        throw Exception("TODO")
     }
 
 }
