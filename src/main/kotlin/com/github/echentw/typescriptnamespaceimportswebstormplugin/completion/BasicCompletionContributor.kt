@@ -1,106 +1,68 @@
 package com.github.echentw.typescriptnamespaceimportswebstormplugin.completion
 
+import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.ModuleForCompletion
 import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.NamespaceImportCompletionServiceImpl
 import com.intellij.codeInsight.completion.*
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.util.ProcessingContext
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.psi.PsiDocumentManager
-import com.intellij.psi.PsiFile
-import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.TypeScriptFileScannerService
-import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.TsConfigService
 
 class BasicCompletionContributor : CompletionContributor() {
-
     init {
-        // Register our completion provider for any text
-        extend(
-            CompletionType.BASIC,
-            PlatformPatterns.psiElement(),
-            object : CompletionProvider<CompletionParameters>() {
-                override fun addCompletions(
-                    parameters: CompletionParameters,
-                    context: ProcessingContext,
-                    result: CompletionResultSet
-                ) {
-                    val project = parameters.position.project
-                    val service = project.getService(NamespaceImportCompletionServiceImpl::class.java)
-                    val fileScanner = project.getService(TypeScriptFileScannerService::class.java)
-                    val tsConfigService = project.getService(TsConfigService::class.java)
+        extend(CompletionType.BASIC, PlatformPatterns.psiElement(), object : CompletionProvider<CompletionParameters>() {
+            override fun addCompletions(
+                parameters: CompletionParameters,
+                context: ProcessingContext,
+                result: CompletionResultSet
+            ) {
+                val project = parameters.position.project
+                val service = project.getService(NamespaceImportCompletionServiceImpl::class.java)
 
-                    // Ensure services are initialized (fallback for safety)
-                    service.initialize()
-                    fileScanner.initialize()
-                    tsConfigService.initialize()
+                // Call initialize here again, just in case
+                service.initialize()
 
-                    val modulesByFirstLetter = fileScanner.getModulesByFirstLetter()
+                val prefix = result.prefixMatcher.prefix.lowercase()
+                if (prefix.isEmpty()) return
+                val firstLetter = prefix.first()
 
-                    // Get the prefix being typed
-                    val prefix = result.prefixMatcher.prefix.lowercase()
-                    if (prefix.isEmpty()) return
+                val currentFile = parameters.originalFile.virtualFile
+                if (currentFile === null) return
 
-                    val firstLetter = prefix.first()
-                    val modules = service.getModulesByFirstLetter(firstLetter)
-
-                    // Add completion suggestions based on module names
-                    // Use originalFile.virtualFile which works reliably in completion context
-                    val currentFile = parameters.originalFile.virtualFile
-                    
-                    if (currentFile != null) {
-                        modulesByFirstLetter[firstLetter]?.forEach { moduleInfo ->
-                            if (moduleInfo.moduleName.lowercase().startsWith(prefix)) {
-                                // Use TsConfigService for proper path resolution
-                                val modulePath = tsConfigService.resolveModulePath(currentFile, moduleInfo.virtualFile)
-
-                                result.addElement(
-                                    LookupElementBuilder.create(moduleInfo.moduleName)
-                                        .withPresentableText(moduleInfo.moduleName)
-                                        .withTailText(" from $modulePath")
-                                        .withTypeText("namespace import")
-                                        .withInsertHandler(ImportInsertHandler(moduleInfo.moduleName, modulePath))
-                                )
-                            }
-                        }
-                    }
+                val modules = service.getModulesForCompletion(currentFile, firstLetter)
+                for (module in modules) {
+                    result.addElement(
+                        LookupElementBuilder.create(module.moduleName)
+                            .withPresentableText(module.moduleName)
+                            .withTailText(" from ${module.importPath}")
+                            .withTypeText("namespace import")
+                            .withInsertHandler(InsertImportStatementHandler(module))
+                    )
                 }
             }
-        )
+        })
     }
 }
 
-class ImportInsertHandler(
-    private val moduleName: String,
-    private val modulePath: String
-) : InsertHandler<LookupElement> {
+class InsertImportStatementHandler(private val module: ModuleForCompletion) : InsertHandler<LookupElement> {
     
     override fun handleInsert(context: InsertionContext, item: LookupElement) {
         val document = context.document
         val project = context.project
         val psiFile = context.file
         
-        // Insert the module name at cursor (this happens automatically by the LookupElement)
-        // Now we need to add the import statement at the top
-        
-        WriteCommandAction.runWriteCommandAction(project) {
-            addImportStatement(document, psiFile, moduleName, modulePath)
-        }
-    }
-    
-    private fun addImportStatement(document: Document, psiFile: PsiFile, moduleName: String, modulePath: String) {
-        val importStatement = "import * as $moduleName from '$modulePath';\n"
-        
-        // Check if import already exists
-        if (document.text.contains(importStatement)) {
-            return // Import already exists
-        }
-        
-        // Insert the import statement
-        document.insertString(0, importStatement)
-        
-        // Commit the document changes
-        PsiDocumentManager.getInstance(psiFile.project).commitDocument(document)
+        // The module name will already be automatically inserted.
+        // We just need to add the import statement to the top of the file.
+        WriteCommandAction.runWriteCommandAction(project, fun() {
+            val importStatement = "import * as ${module.moduleName} from '${module.importPath}';\n"
+
+            if (document.text.contains(importStatement)) return
+
+            document.insertString(0, importStatement)
+
+            PsiDocumentManager.getInstance(psiFile.project).commitDocument(document)
+        })
     }
 }

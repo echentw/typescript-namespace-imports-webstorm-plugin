@@ -2,8 +2,8 @@ package com.github.echentw.typescriptnamespaceimportswebstormplugin.services
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import com.jetbrains.rd.util.ConcurrentHashMap
-import java.util.Optional
 
 data class TsProject(
     val tsConfigJson: TsConfigJson,
@@ -12,9 +12,9 @@ data class TsProject(
 )
 
 data class TsConfigJson(
-    val baseUrl: Optional<String>,
+    val baseUrl: String?,
     val paths: Map<String, Array<String>>,
-    val outDir: Optional<String>,
+    val outDir: String?,
 )
 
 data class ModuleForBareImport(
@@ -39,7 +39,7 @@ data class ModuleForCompletion(
 
 interface NamespaceImportCompletionService {
     fun initialize()
-    fun getModulesByFirstLetter(letter: Char): Array<ModuleForCompletion>
+    fun getModulesForCompletion(currentFile: VirtualFile, queryFirstLetter: Char): Array<ModuleForCompletion>
 }
 
 @Service(Service.Level.PROJECT)
@@ -51,8 +51,7 @@ class NamespaceImportCompletionServiceImpl(private val project: Project): Namesp
     override fun initialize() {
     }
 
-    override fun getModulesByFirstLetter(letter: Char): Array<ModuleForCompletion> {
+    override fun getModulesForCompletion(currentFile: VirtualFile, queryFirstLetter: Char): Array<ModuleForCompletion> {
         throw Exception("TODO")
     }
-
 }
