@@ -20,12 +20,6 @@ class MyProjectActivity : ProjectActivity {
                     val service = project.getService(NamespaceImportCompletionService::class.java)
                     service.initialize()
 
-                    val tsConfigService = project.getService(TsConfigService::class.java)
-                    tsConfigService.initialize()
-
-                    val fileScannerService = project.getService(TypeScriptFileScannerService::class.java)
-                    fileScannerService.initialize()
-                    
                     thisLogger().info("TypeScript Namespace Imports plugin initialization complete for project: ${project.name}")
                 } catch (e: Exception) {
                     thisLogger().error("Failed to initialize TypeScript Namespace Imports plugin", e)

@@ -3,6 +3,8 @@ package com.github.echentw.typescriptnamespaceimportswebstormplugin.services
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.search.FilenameIndex
+import com.intellij.psi.search.GlobalSearchScope
 import com.jetbrains.rd.util.ConcurrentHashMap
 
 data class TsProject(
@@ -48,10 +50,42 @@ class NamespaceImportCompletionServiceImpl(private val project: Project): Namesp
     private val tsProjectByPath: Map<TsProjectPath, TsProject> = ConcurrentHashMap()
     private val ownerTsProjectPathByTsFilePath: Map<TsFilePath, TsProjectPath> = ConcurrentHashMap()
 
+    private var isInitialized = false
     override fun initialize() {
+        if (!isInitialized) {
+            scanFiles()
+            setupFileWatcher()
+            isInitialized = true
+        }
+    }
+
+    fun rescanFiles() {
+        if (isInitialized) {
+            scanFiles()
+        }
     }
 
     override fun getModulesForCompletion(currentFile: VirtualFile, queryFirstLetter: Char): Array<ModuleForCompletion> {
-        throw Exception("TODO")
+        throw Exception("todo")
+    }
+
+    private fun scanFiles() {
+        val tsConfigJsonByTsProjectPath = discoverTsConfigJsons()
+
+        val tsFiles = FilenameIndex.getAllFilesByExt(project, "ts", GlobalSearchScope.projectScope(project))
+        val tsxFiles = FilenameIndex.getAllFilesByExt(project, "tsx", GlobalSearchScope.projectScope(project))
+        val allFiles = tsFiles + tsxFiles
+
+
+    }
+
+    private fun discoverTsConfigJsons(): Map<TsProjectPath, TsConfigJson> {
+        val tsConfigJsonFiles = FilenameIndex.getVirtualFilesByName("tsconfig.json", GlobalSearchScope.projectScope(project))
+
+        throw Exception("todo")
+    }
+
+    private fun setupFileWatcher() {
+
     }
 }

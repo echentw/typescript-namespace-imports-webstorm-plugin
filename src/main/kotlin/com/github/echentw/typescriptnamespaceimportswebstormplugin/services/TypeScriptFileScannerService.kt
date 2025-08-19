@@ -212,7 +212,6 @@ class TypeScriptFileScannerService(private val project: Project) {
             modulesByFirstLetter.computeIfAbsent(prefix) { mutableListOf() }.add(moduleInfo)
 
         }
-        
     }
 }
 
