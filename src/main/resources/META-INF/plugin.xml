@@ -7,7 +7,7 @@
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <postStartupActivity implementation="com.github.echentw.typescriptnamespaceimportswebstormplugin.startup.MyProjectActivity" />
-        <completion.contributor language="TypeScript" implementationClass="com.github.echentw.typescriptnamespaceimportswebstormplugin.completion.BasicCompletionContributor"/>
+        <postStartupActivity implementation="com.github.echentw.typescriptnamespaceimportswebstormplugin.startup.ExtensionProjectActivity" />
+        <completion.contributor language="TypeScript" implementationClass="com.github.echentw.typescriptnamespaceimportswebstormplugin.completion.ExtensionCompletionContributor"/>
     </extensions>
 </idea-plugin>

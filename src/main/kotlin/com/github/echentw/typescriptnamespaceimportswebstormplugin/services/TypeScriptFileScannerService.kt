@@ -14,13 +14,10 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.roots.ModuleRootEvent
 import com.intellij.openapi.roots.ModuleRootListener
-import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.util.messages.Topic
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 data class ModuleInfo(
     val moduleName: String,

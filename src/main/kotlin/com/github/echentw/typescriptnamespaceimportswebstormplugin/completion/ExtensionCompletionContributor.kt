@@ -1,7 +1,7 @@
 package com.github.echentw.typescriptnamespaceimportswebstormplugin.completion
 
 import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.ModuleForCompletion
-import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.NamespaceImportCompletionServiceImpl
+import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.ExtensionServiceImpl
 import com.intellij.codeInsight.completion.*
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.codeInsight.lookup.LookupElement
@@ -10,7 +10,7 @@ import com.intellij.util.ProcessingContext
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.psi.PsiDocumentManager
 
-class BasicCompletionContributor : CompletionContributor() {
+class ExtensionCompletionContributor : CompletionContributor() {
     init {
         extend(CompletionType.BASIC, PlatformPatterns.psiElement(), object : CompletionProvider<CompletionParameters>() {
             override fun addCompletions(
@@ -19,7 +19,7 @@ class BasicCompletionContributor : CompletionContributor() {
                 result: CompletionResultSet
             ) {
                 val project = parameters.position.project
-                val service = project.getService(NamespaceImportCompletionServiceImpl::class.java)
+                val service = project.getService(ExtensionServiceImpl::class.java)
 
                 // Call initialize here again, just in case
                 service.initialize()
@@ -47,7 +47,6 @@ class BasicCompletionContributor : CompletionContributor() {
 }
 
 class InsertImportStatementHandler(private val module: ModuleForCompletion) : InsertHandler<LookupElement> {
-    
     override fun handleInsert(context: InsertionContext, item: LookupElement) {
         val document = context.document
         val project = context.project

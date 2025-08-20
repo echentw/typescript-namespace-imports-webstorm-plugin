@@ -4,11 +4,9 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.application.ApplicationManager
-import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.TypeScriptFileScannerService
-import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.TsConfigService
-import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.NamespaceImportCompletionService
+import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.ExtensionService
 
-class MyProjectActivity : ProjectActivity {
+class ExtensionProjectActivity : ProjectActivity {
 
     override suspend fun execute(project: Project) {
         thisLogger().info("TypeScript Namespace Imports plugin initializing for project: ${project.name}")
@@ -17,7 +15,7 @@ class MyProjectActivity : ProjectActivity {
         ApplicationManager.getApplication().executeOnPooledThread {
             ApplicationManager.getApplication().runReadAction {
                 try {
-                    val service = project.getService(NamespaceImportCompletionService::class.java)
+                    val service = project.getService(ExtensionService::class.java)
                     service.initialize()
 
                     thisLogger().info("TypeScript Namespace Imports plugin initialization complete for project: ${project.name}")
