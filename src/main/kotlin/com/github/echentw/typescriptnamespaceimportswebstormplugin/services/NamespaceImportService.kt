@@ -67,9 +67,7 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
         val allFiles = tsFiles + tsxFiles
 
         for (file in allFiles) {
-            // 1. find the tsconfig.json and project path
-            // 2. create a TsProject
-            // 3.
+            tsProjectByPath.keys.first { file.path.startsWith(it) }
 
         }
     }
