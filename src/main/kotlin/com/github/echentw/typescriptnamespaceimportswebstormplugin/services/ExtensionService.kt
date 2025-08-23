@@ -14,7 +14,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 
 interface ExtensionService {
     fun initialize()
-    fun getModulesForCompletion(file: VirtualFile, query: String): Array<ModuleForCompletion>
+    fun getModulesForCompletion(file: VirtualFile, query: String): List<ModuleForCompletion>
 }
 
 @Service(Service.Level.PROJECT)
@@ -33,8 +33,8 @@ class ExtensionServiceImpl(private val project: Project) : ExtensionService {
         }
     }
 
-    override fun getModulesForCompletion(file: VirtualFile, query: String): Array<ModuleForCompletion> {
-        if (service == null) return emptyArray()
+    override fun getModulesForCompletion(file: VirtualFile, query: String): List<ModuleForCompletion> {
+        if (service == null) return emptyList()
         return service!!.getModulesForCompletion(file, query)
     }
 

@@ -24,14 +24,13 @@ class ExtensionCompletionContributor : CompletionContributor() {
                 // Call initialize here again, just in case
                 service.initialize()
 
-                val prefix = result.prefixMatcher.prefix.lowercase()
-                if (prefix.isEmpty()) return
-                val firstLetter = prefix.first()
-
                 val currentFile = parameters.originalFile.virtualFile
                 if (currentFile === null) return
 
-                val modules = service.getModulesForCompletion(currentFile, firstLetter)
+                val query = result.prefixMatcher.prefix.lowercase()
+                if (query.isEmpty()) return
+
+                val modules = service.getModulesForCompletion(currentFile, query)
                 for (module in modules) {
                     result.addElement(
                         LookupElementBuilder.create(module.moduleName)
