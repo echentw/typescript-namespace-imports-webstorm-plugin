@@ -9,6 +9,7 @@ import parseTsConfigJson
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.String
 import kotlin.collections.Map
+import kotlin.io.path.Path
 
 data class TsProject(
     val tsConfigJson: TsConfigJson,
@@ -95,7 +96,18 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
 
         val modulesForRelativeImport = tsProject.modulesForRelativeImportByQueryFirstChar[query.first()] ?: emptyList()
         for (moduleInfo in modulesForRelativeImport) {
-            // TODO
+            if (moduleInfo.tsFilePath == file.path) {
+                // Don't suggest the current file as a completion option.
+                continue
+            }
+            val relativeModulePath = Path(file.path).parent.relativize(Path(moduleInfo.tsFilePath)).normalize().toString()
+
+            var importPath = Util.pathWithoutExtension(relativeModulePath)
+            if (!relativeModulePath.startsWith("..")) {
+                importPath = "./$importPath"
+            }
+
+            modules.add(ModuleForCompletion(moduleInfo.moduleName, importPath))
         }
 
         return modules

@@ -26,6 +26,10 @@ object Util {
     }
 
     fun playground() {
-
+        println("--begin playground--")
+        println(Path("/a/b/c.ts").relativize(Path("/a/d/e.ts")).toString())
+        println(Path("/a/b/c.ts").parent.toString())
+        println(Path("/a").parent.toString())
+        println("--end playground--")
     }
 }
