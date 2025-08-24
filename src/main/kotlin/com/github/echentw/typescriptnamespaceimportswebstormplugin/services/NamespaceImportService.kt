@@ -4,6 +4,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
+import com.jetbrains.rd.util.string.printToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import parseTsConfigJson
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.String
 import kotlin.collections.Map
@@ -16,7 +20,7 @@ data class TsProject(
 
 data class TsConfigJson(
     val baseUrl: String?,
-    val paths: Map<String, List<String>>,
+    val paths: Map<String, List<String>>?,
     val outDir: String?,
 )
 
@@ -53,6 +57,7 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
 
     init {
         val tsConfigJsonByTsProjectPath = discoverTsConfigJsons(project)
+
         for ((tsProjectPath, tsConfigJson) in tsConfigJsonByTsProjectPath) {
             tsProjectByPath.put(tsProjectPath, TsProject(
                 tsConfigJson,
@@ -69,12 +74,12 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
         for (file in allFiles) {
             processNewTsFile(file, tsProjectPathsSorted)
         }
-
-        println("hello")
     }
 
     override fun getModulesForCompletion(file: VirtualFile, query: String): List<ModuleForCompletion> {
-        throw Exception("todo")
+        println("todo")
+        return emptyList()
+//        throw Exception("todo")
     }
 
     override fun handleFileCreated(file: VirtualFile) {
@@ -88,11 +93,11 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
     }
 
     override fun handleFileDeleted(file: VirtualFile) {
-        throw Exception("todo")
+        // TODO: finish implementing
     }
 
     override fun handleFileContentChanged(file: VirtualFile) {
-        throw Exception("todo")
+        // TODO: finish implementing
     }
 
     private fun processNewTsFile(file: VirtualFile, tsProjectPathsSorted: List<TsProjectPath>): Unit {
@@ -131,16 +136,26 @@ private fun isTsFile(file: VirtualFile): Boolean {
 }
 
 private fun shouldTsFileBeIgnored(file: VirtualFile, tsConfigJsonByProjectPath: Map<TsProjectPath, TsConfigJson>): Boolean {
-    throw Exception("todo")
+    // TODO: finish implementing
+    return file.path.contains("/node_modules/")
 }
 
 private fun discoverTsConfigJsons(project: Project): Map<TsProjectPath, TsConfigJson> {
-    val tsConfigJsonFiles = FilenameIndex.getVirtualFilesByName("tsconfig.json", GlobalSearchScope.projectScope(project))
-    for (tsConfigJsonFile in tsConfigJsonFiles) {
-        tsConfigJsonFile.path
-    }
+    val map = mutableMapOf<TsProjectPath, TsConfigJson>()
 
-    throw Exception("todo")
+    val files = FilenameIndex.getVirtualFilesByName("tsconfig.json", GlobalSearchScope.projectScope(project))
+    for (file in files) {
+        val result = parseTsConfigJson(file)
+        when (result) {
+            is Result.Err -> {
+                println(result.err)
+            }
+            is Result.Ok -> {
+                map.put(file.parent.path, result.value)
+            }
+        }
+    }
+    return map
 }
 
 sealed class ModuleEvaluationForTsProject {
@@ -154,5 +169,6 @@ private fun evaluateModuleForTsProject(
     tsProject: TsProject,
     module: VirtualFile,
 ): ModuleEvaluationForTsProject {
-    throw Exception("todo")
+    // TODO: finish implementing
+    return ModuleEvaluationForTsProject.ImportDisallowed()
 }

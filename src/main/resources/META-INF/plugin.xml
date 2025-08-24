@@ -9,5 +9,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.github.echentw.typescriptnamespaceimportswebstormplugin.startup.ExtensionProjectActivity" />
         <completion.contributor language="TypeScript" implementationClass="com.github.echentw.typescriptnamespaceimportswebstormplugin.completion.ExtensionCompletionContributor"/>
+        <projectService serviceInterface="com.github.echentw.typescriptnamespaceimportswebstormplugin.services.ExtensionService"
+                        serviceImplementation="com.github.echentw.typescriptnamespaceimportswebstormplugin.services.ExtensionServiceImpl"/>
     </extensions>
 </idea-plugin>

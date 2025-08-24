@@ -1,6 +1,6 @@
 sealed class Result<out OkT, out ErrT> {
     data class Ok<out OkT>(val value: OkT) : Result<OkT, Nothing>()
-    data class Err<out ErrT>(val error: ErrT) : Result<Nothing, ErrT>()
+    data class Err<out ErrT>(val err: ErrT) : Result<Nothing, ErrT>()
 
     companion object {
         // Convenience factory methods
@@ -12,7 +12,7 @@ sealed class Result<out OkT, out ErrT> {
 fun example(result: Result<String, Int>): Unit {
     when (result) {
         is Result.Err -> {
-            println("Error: ${result.error}")
+            println("Error: ${result.err}")
             return
         }
         is Result.Ok -> {}
