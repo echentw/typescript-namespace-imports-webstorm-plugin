@@ -1,5 +1,6 @@
 package com.github.echentw.typescriptnamespaceimportswebstormplugin.services
 
+import com.intellij.ide.actions.searcheverywhere.evaluate
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.FilenameIndex
@@ -70,7 +71,7 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
         val tsxFiles = FilenameIndex.getAllFilesByExt(project, "tsx", GlobalSearchScope.projectScope(project))
         val allFiles = (tsFiles + tsxFiles).filter { !shouldTsFileBeIgnored(it, tsConfigJsonByTsProjectPath) }
 
-        val tsProjectPathsSorted = tsProjectByPath.keys.sortedByDescending { it.count { char -> char == '/'} }
+        val tsProjectPathsSorted = tsProjectByPath.keys.sortedByDescending { it.count { char -> char == '/' } }
         for (file in allFiles) {
             processNewTsFile(file, tsProjectPathsSorted)
         }
@@ -115,20 +116,36 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
 
     override fun handleFileCreated(file: VirtualFile) {
         if (isTsConfigJson(file)) {
+            // TODO: re-index everything
             return
         }
-        if (isTsFile(file)) {
-            val tsProjectPathsSorted = tsProjectByPath.keys.sortedByDescending { it.count { char -> char == '/'} }
-            processNewTsFile(file, tsProjectPathsSorted)
-        }
+        if (!isTsFile(file)) return
+        if (shouldTsFileBeIgnored(file, tsProjectByPath.mapValues { it.value.tsConfigJson })) return
+
+        val tsProjectPathsSorted = tsProjectByPath.keys.sortedByDescending { it.count { char -> char == '/' } }
+        processNewTsFile(file, tsProjectPathsSorted)
     }
 
     override fun handleFileDeleted(file: VirtualFile) {
+        if (isTsConfigJson(file)) {
+            // TODO: re-index everything
+            return
+        }
+        if (!isTsFile(file)) return
+        if (shouldTsFileBeIgnored(file, tsProjectByPath.mapValues { it.value.tsConfigJson })) return
+
         // TODO: finish implementing
+        for ((tsProjectPath, tsProject) in tsProjectByPath) {
+            val evalResult = evaluateModuleForTsProject(tsProjectPath, tsProject.tsConfigJson, file)
+        }
+        ownerTsProjectPathByTsFilePath.remove(file.path)
     }
 
     override fun handleFileContentChanged(file: VirtualFile) {
-        // TODO: finish implementing
+        if (isTsConfigJson(file)) {
+            // TODO: re-index everything
+            return
+        }
     }
 
     private fun processNewTsFile(file: VirtualFile, tsProjectPathsSorted: List<TsProjectPath>): Unit {
@@ -141,12 +158,14 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
                         .getOrPut(moduleName.first()) { mutableListOf() }
                         .add(ModuleForBareImport(moduleName, importPath, file.path))
                 }
+
                 is ModuleEvaluationForTsProject.RelativeImport -> {
                     val (moduleName) = evalResult
                     tsProject.modulesForRelativeImportByQueryFirstChar
                         .getOrPut(moduleName.first()) { mutableListOf() }
                         .add(ModuleForRelativeImport(moduleName, file.path))
                 }
+
                 is ModuleEvaluationForTsProject.ImportDisallowed -> {}
             }
         }
@@ -167,8 +186,16 @@ private fun isTsFile(file: VirtualFile): Boolean {
 }
 
 private fun shouldTsFileBeIgnored(file: VirtualFile, tsConfigJsonByProjectPath: Map<TsProjectPath, TsConfigJson>): Boolean {
-    // TODO: finish implementing
-    return file.path.contains("/node_modules/")
+    if (file.path.contains("/node_modules/")) return true
+
+    for ((tsProjectPath, tsConfigJson) in tsConfigJsonByProjectPath) {
+        if (tsConfigJson.outDir == null) continue
+        val outDirPath = Path(tsProjectPath).relativize(Path(tsConfigJson.outDir)).normalize().toString()
+        if (file.path.startsWith(outDirPath)) {
+            return true
+        }
+    }
+    return false
 }
 
 private fun discoverTsConfigJsons(project: Project): Map<TsProjectPath, TsConfigJson> {
