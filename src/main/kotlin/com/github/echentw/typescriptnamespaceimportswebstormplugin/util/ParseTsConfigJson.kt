@@ -7,11 +7,11 @@ import de.marhali.json5.Json5Object
 import de.marhali.json5.exception.Json5Exception
 
 fun parseTsConfigJson(file: VirtualFile): Result<TsConfigJson, String> {
-    var content: String
+    val content: String
     try {
         content = String(file.contentsToByteArray())
     } catch (e: Exception) {
-        return Result.err("Failed to read ${file.path}: ${e.toString()}");
+        return Result.err("Failed to read ${file.path}: ${e.toString()}")
     }
 
     val json5Instance = Json5.builder { options ->
@@ -23,7 +23,7 @@ fun parseTsConfigJson(file: VirtualFile): Result<TsConfigJson, String> {
 
     val parseErrorPrefix = "Failed to parse ${file.path}"
 
-    var tsConfig: Json5Object
+    val tsConfig: Json5Object
     try {
         val parsed: Json5Object? = json5Instance.parse(content).asJson5Object
         if (parsed == null) return Result.err("$parseErrorPrefix: contents is not object")
@@ -32,7 +32,7 @@ fun parseTsConfigJson(file: VirtualFile): Result<TsConfigJson, String> {
         return Result.err("$parseErrorPrefix: ${e.toString()}")
     }
 
-    var compilerOptions: Json5Object
+    val compilerOptions: Json5Object
     try {
         val element: Json5Element? = tsConfig.get("compilerOptions")
         if (element == null) {
@@ -47,7 +47,7 @@ fun parseTsConfigJson(file: VirtualFile): Result<TsConfigJson, String> {
         return Result.err("$parseErrorPrefix: ${e.toString()}")
     }
 
-    var baseUrl: String?
+    val baseUrl: String?
     try {
         val element: Json5Element? = compilerOptions.get("baseUrl")
         if (element == null) {
@@ -63,7 +63,7 @@ fun parseTsConfigJson(file: VirtualFile): Result<TsConfigJson, String> {
         return Result.err("$parseErrorPrefix: ${e.toString()}")
     }
 
-    var paths: Map<String, List<String>>?
+    val paths: Map<String, List<String>>?
     try {
         val element: Json5Element? = compilerOptions.get("paths")
         if (element == null) {
@@ -97,14 +97,14 @@ fun parseTsConfigJson(file: VirtualFile): Result<TsConfigJson, String> {
                     pathsValueList.add(value)
                 }
 
-                paths.put(key, pathsValueList)
+                paths[key] = pathsValueList
             }
         }
     } catch (e: Json5Exception) {
         return Result.err("$parseErrorPrefix: ${e.toString()}")
     }
 
-    var outDir: String?
+    val outDir: String?
     try {
         val element: Json5Element? = compilerOptions.get("outDir")
         if (element == null) {

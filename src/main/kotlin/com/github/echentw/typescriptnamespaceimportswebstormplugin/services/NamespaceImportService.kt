@@ -57,11 +57,11 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
 
         val tsConfigJsonByTsProjectPath = discoverTsConfigJsons(project)
         for ((tsProjectPath, tsConfigJson) in tsConfigJsonByTsProjectPath) {
-            tsProjectByPath.put(tsProjectPath, TsProject(
+            tsProjectByPath[tsProjectPath] = TsProject(
                 tsConfigJson,
                 ConcurrentHashMap(),
                 ConcurrentHashMap(),
-            ))
+            )
         }
 
         val tsFiles = FilenameIndex.getAllFilesByExt(project, "ts", GlobalSearchScope.projectScope(project))
@@ -78,11 +78,8 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
     }
 
     override fun getModulesForCompletion(file: VirtualFile, query: String): List<ModuleForCompletion> {
-        val tsProjectPath = ownerTsProjectPathByTsFilePath[file.path]
-        if (tsProjectPath == null) return emptyList()
-
-        val tsProject = tsProjectByPath[tsProjectPath]
-        if (tsProject == null) return emptyList()
+        val tsProjectPath = ownerTsProjectPathByTsFilePath[file.path] ?: return emptyList()
+        val tsProject = tsProjectByPath[tsProjectPath] ?: return emptyList()
 
         val modules = mutableListOf<ModuleForCompletion>()
 
@@ -139,7 +136,7 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
 
         val tsProjectPath = tsProjectPathsSorted.firstOrNull { file.path.startsWith(it) }
         if (tsProjectPath != null) {
-            ownerTsProjectPathByTsFilePath.put(file.path, tsProjectPath)
+            ownerTsProjectPathByTsFilePath[file.path] = tsProjectPath
         }
     }
 }
@@ -168,7 +165,7 @@ private fun discoverTsConfigJsons(project: Project): Map<TsProjectPath, TsConfig
                 println(result.err)
             }
             is Result.Ok -> {
-                map.put(file.parent.path, result.value)
+                map[file.parent.path] = result.value
             }
         }
     }
