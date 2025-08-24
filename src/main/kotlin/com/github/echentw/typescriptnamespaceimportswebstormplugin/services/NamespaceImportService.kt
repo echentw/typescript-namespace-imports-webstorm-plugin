@@ -25,6 +25,7 @@ data class TsConfigJson(
 data class ModuleForBareImport(
     val moduleName: String,
     val importPath: String,
+    val tsFilePath: TsFilePath, // used to make sure we don't suggest the same file we're in
 )
 
 data class ModuleForRelativeImport(
@@ -85,6 +86,10 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
 
         val modulesForBareImport = tsProject.modulesForBareImportByQueryFirstChar[query.first()] ?: emptyList()
         for (moduleInfo in modulesForBareImport) {
+            if (moduleInfo.tsFilePath == file.path) {
+                // Don't suggest the current file as a completion option.
+                continue
+            }
             modules.add(ModuleForCompletion(moduleInfo.moduleName, moduleInfo.importPath))
         }
 
@@ -122,7 +127,7 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
                     val (moduleName, importPath) = evalResult
                     tsProject.modulesForBareImportByQueryFirstChar
                         .getOrPut(moduleName.first()) { mutableListOf() }
-                        .add(ModuleForBareImport(moduleName, importPath))
+                        .add(ModuleForBareImport(moduleName, importPath, file.path))
                 }
                 is ModuleEvaluationForTsProject.RelativeImport -> {
                     val (moduleName) = evalResult
