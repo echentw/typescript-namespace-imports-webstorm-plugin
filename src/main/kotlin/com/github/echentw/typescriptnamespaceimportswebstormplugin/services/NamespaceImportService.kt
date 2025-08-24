@@ -121,7 +121,7 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
 
     private fun processNewTsFile(file: VirtualFile, tsProjectPathsSorted: List<TsProjectPath>): Unit {
         for ((tsProjectPath, tsProject) in tsProjectByPath) {
-            val evalResult = evaluateModuleForTsProject(tsProjectPath, tsProject, file)
+            val evalResult = evaluateModuleForTsProject(tsProjectPath, tsProject.tsConfigJson, file)
             when (evalResult) {
                 is ModuleEvaluationForTsProject.BareImport -> {
                     val (moduleName, importPath) = evalResult
