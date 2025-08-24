@@ -1,16 +1,10 @@
 package com.github.echentw.typescriptnamespaceimportswebstormplugin.services
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
-import com.jetbrains.rd.util.string.printToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import parseTsConfigJson
-import stringify
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.String
 import kotlin.collections.Map
@@ -30,7 +24,6 @@ data class TsConfigJson(
 data class ModuleForBareImport(
     val moduleName: String,
     val importPath: String,
-    val tsFilePath: TsFilePath,
 )
 
 data class ModuleForRelativeImport(
@@ -60,8 +53,6 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
 
     init {
         val tsConfigJsonByTsProjectPath = discoverTsConfigJsons(project)
-        println("tsConfigJsonByTsProjectPath: ${stringify(tsConfigJsonByTsProjectPath)}")
-
         for ((tsProjectPath, tsConfigJson) in tsConfigJsonByTsProjectPath) {
             tsProjectByPath.put(tsProjectPath, TsProject(
                 tsConfigJson,
@@ -81,9 +72,25 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
     }
 
     override fun getModulesForCompletion(file: VirtualFile, query: String): List<ModuleForCompletion> {
-        println("todo")
-        return emptyList()
-//        throw Exception("todo")
+        val tsProjectPath = ownerTsProjectPathByTsFilePath[file.path]
+        if (tsProjectPath == null) return emptyList()
+
+        val tsProject = tsProjectByPath[tsProjectPath]
+        if (tsProject == null) return emptyList()
+
+        val modules = mutableListOf<ModuleForCompletion>()
+
+        val modulesForBareImport = tsProject.modulesForBareImportByQueryFirstChar[query.first()] ?: emptyList()
+        for (moduleInfo in modulesForBareImport) {
+            modules.add(ModuleForCompletion(moduleInfo.moduleName, moduleInfo.importPath))
+        }
+
+        val modulesForRelativeImport = tsProject.modulesForRelativeImportByQueryFirstChar[query.first()] ?: emptyList()
+        for (moduleInfo in modulesForBareImport) {
+            // TODO
+        }
+
+        return modules
     }
 
     override fun handleFileCreated(file: VirtualFile) {
@@ -112,7 +119,7 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
                     val (moduleName, importPath) = evalResult
                     tsProject.modulesForBareImportByQueryFirstChar
                         .getOrPut(moduleName.first()) { mutableListOf() }
-                        .add(ModuleForBareImport(moduleName, importPath, file.path))
+                        .add(ModuleForBareImport(moduleName, importPath))
                 }
                 is ModuleEvaluationForTsProject.RelativeImport -> {
                     val (moduleName) = evalResult
@@ -174,5 +181,6 @@ private fun evaluateModuleForTsProject(
     module: VirtualFile,
 ): ModuleEvaluationForTsProject {
     // TODO: finish implementing
-    return ModuleEvaluationForTsProject.ImportDisallowed()
+    return ModuleEvaluationForTsProject.BareImport("moduleName", "import/path")
+//    return ModuleEvaluationForTsProject.ImportDisallowed()
 }

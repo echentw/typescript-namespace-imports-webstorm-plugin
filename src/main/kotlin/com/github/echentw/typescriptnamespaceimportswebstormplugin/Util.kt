@@ -24,7 +24,9 @@ fun resultExample(result: Result<String, Int>): Unit {
     val data = result.value
 }
 
-fun stringify(obj: Any): String {
-    val gson = GsonBuilder().setPrettyPrinting().create()
-    return gson.toJson(obj)
+object Util {
+    fun stringify(obj: Any): String {
+        val gson = GsonBuilder().setPrettyPrinting().create()
+        return gson.toJson(obj)
+    }
 }
