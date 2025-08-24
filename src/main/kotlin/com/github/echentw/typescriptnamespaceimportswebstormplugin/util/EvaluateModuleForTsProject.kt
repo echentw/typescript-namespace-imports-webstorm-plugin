@@ -3,8 +3,6 @@ import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.TsPr
 import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.TsProjectPath
 import com.intellij.openapi.vfs.VirtualFile
 import kotlin.io.path.Path
-import kotlin.io.path.extension
-import kotlin.io.path.nameWithoutExtension
 
 sealed class ModuleEvaluationForTsProject {
     data class BareImport(val moduleName: String, val importPath: String) : ModuleEvaluationForTsProject()
@@ -54,9 +52,8 @@ private fun makeBareImportPath(
         return Util.pathWithoutExtension(matchedPath)
     }
 
-    // TODO: check this logic
     if (tsProject.tsConfigJson.baseUrl != null) {
-        val baseUrlPath = Path(tsProjectPath).resolve(tsProject.tsConfigJson.baseUrl)
+        val baseUrlPath = Path(tsProjectPath).resolve(tsProject.tsConfigJson.baseUrl).normalize()
         if (file.path.startsWith(baseUrlPath.toString())) {
             val relativeFilePath = baseUrlPath.relativize(Path(file.path)).toString()
 
@@ -76,12 +73,14 @@ private fun matchPathPatternForProject(
 ): String? {
     if (tsProject.tsConfigJson.paths == null) return null
 
-    val baseUrl = tsProject.tsConfigJson.baseUrl ?: "."
-    val baseUrlPath = Path(tsProjectPath).resolve(baseUrl)
+    val baseUrlPath = Path(tsProjectPath)
+        .resolve(tsProject.tsConfigJson.baseUrl ?: ".")
+        .normalize()
 
     for ((pattern, mappings) in tsProject.tsConfigJson.paths) {
         for (mapping in mappings) {
-            val resolvedMapping = baseUrlPath.resolve(mapping)
+            val resolvedMapping = baseUrlPath.resolve(mapping).normalize()
+            println("resolvedMapping: $resolvedMapping")
 
             if (pattern.contains('*')) {
                 val patternPrefix = pattern.replace("*", "")
@@ -101,7 +100,7 @@ private fun matchPathPatternForProject(
 }
 
 fun doesImportPathViaBaseUrlConflictWithPathsMapping(
-    importPath: String,
+    relativeFilePath: String,
     tsConfigJson: TsConfigJson,
 ): Boolean {
     if (tsConfigJson.paths == null) return false
@@ -112,7 +111,7 @@ fun doesImportPathViaBaseUrlConflictWithPathsMapping(
         } else {
             pattern
         }
-        if (importPath.startsWith(pattern)) {
+        if (relativeFilePath.startsWith(patternPrefix)) {
             return true
         }
     }

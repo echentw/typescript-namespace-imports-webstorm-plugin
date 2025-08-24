@@ -21,7 +21,11 @@ object Util {
 
     fun pathWithoutExtension(path: String): String {
         val path = Path(path)
-        val folderPath = path.parent?.toString() ?: ""
-        return folderPath + path.nameWithoutExtension
+        return path.parent?.resolve(path.nameWithoutExtension)?.normalize()?.toString()
+            ?: path.nameWithoutExtension
+    }
+
+    fun playground() {
+
     }
 }

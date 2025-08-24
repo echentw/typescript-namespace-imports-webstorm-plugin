@@ -53,6 +53,8 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
     private val ownerTsProjectPathByTsFilePath: MutableMap<TsFilePath, TsProjectPath> = ConcurrentHashMap()
 
     init {
+        Util.playground()
+
         val tsConfigJsonByTsProjectPath = discoverTsConfigJsons(project)
         for ((tsProjectPath, tsConfigJson) in tsConfigJsonByTsProjectPath) {
             tsProjectByPath.put(tsProjectPath, TsProject(
@@ -70,6 +72,9 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
         for (file in allFiles) {
             processNewTsFile(file, tsProjectPathsSorted)
         }
+
+        println("tsProjectByPath: ${Util.stringify(tsProjectByPath)}")
+        println("ownerTsProjectPathByTsFilePath: ${Util.stringify(ownerTsProjectPathByTsFilePath)}")
     }
 
     override fun getModulesForCompletion(file: VirtualFile, query: String): List<ModuleForCompletion> {
@@ -87,7 +92,7 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
         }
 
         val modulesForRelativeImport = tsProject.modulesForRelativeImportByQueryFirstChar[query.first()] ?: emptyList()
-        for (moduleInfo in modulesForBareImport) {
+        for (moduleInfo in modulesForRelativeImport) {
             // TODO
         }
 
