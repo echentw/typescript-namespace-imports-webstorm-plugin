@@ -1,4 +1,6 @@
 import com.google.gson.GsonBuilder
+import kotlin.io.path.Path
+import kotlin.io.path.nameWithoutExtension
 
 sealed class Result<out OkT, out ErrT> {
     data class Ok<out OkT>(val value: OkT) : Result<OkT, Nothing>()
@@ -11,22 +13,15 @@ sealed class Result<out OkT, out ErrT> {
     }
 }
 
-fun resultExample(result: Result<String, Int>): Unit {
-    when (result) {
-        is Result.Err -> {
-            println("Error: ${result.err}")
-            return
-        }
-        is Result.Ok -> {}
-    }
-
-    // result is smart cast to Result.Ok<String> here
-    val data = result.value
-}
-
 object Util {
     fun stringify(obj: Any): String {
         val gson = GsonBuilder().setPrettyPrinting().create()
         return gson.toJson(obj)
+    }
+
+    fun pathWithoutExtension(path: String): String {
+        val path = Path(path)
+        val folderPath = path.parent?.toString() ?: ""
+        return folderPath + path.nameWithoutExtension
     }
 }

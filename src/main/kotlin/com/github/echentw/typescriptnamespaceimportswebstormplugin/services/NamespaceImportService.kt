@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
+import evaluateModuleForTsProject
 import parseTsConfigJson
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.String
@@ -167,20 +168,4 @@ private fun discoverTsConfigJsons(project: Project): Map<TsProjectPath, TsConfig
         }
     }
     return map
-}
-
-sealed class ModuleEvaluationForTsProject {
-    data class BareImport(val moduleName: String, val importPath: String) : ModuleEvaluationForTsProject()
-    data class RelativeImport(val moduleName: String) : ModuleEvaluationForTsProject()
-    class ImportDisallowed : ModuleEvaluationForTsProject()
-}
-
-private fun evaluateModuleForTsProject(
-    tsProjectPath: TsProjectPath,
-    tsProject: TsProject,
-    module: VirtualFile,
-): ModuleEvaluationForTsProject {
-    // TODO: finish implementing
-    return ModuleEvaluationForTsProject.BareImport("moduleName", "import/path")
-//    return ModuleEvaluationForTsProject.ImportDisallowed()
 }
