@@ -31,7 +31,8 @@ repositories {
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
-    implementation("de.marhali:json5-java:2.0.0") // JSON5 parser with Gson-like API
+    implementation(libs.gson)
+    implementation(libs.json5)
     testImplementation(libs.junit)
     testImplementation(libs.opentest4j)
 

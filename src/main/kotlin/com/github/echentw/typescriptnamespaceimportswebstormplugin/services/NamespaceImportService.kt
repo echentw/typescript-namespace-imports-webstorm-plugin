@@ -1,5 +1,7 @@
 package com.github.echentw.typescriptnamespaceimportswebstormplugin.services
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.FilenameIndex
@@ -8,6 +10,7 @@ import com.jetbrains.rd.util.string.printToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import parseTsConfigJson
+import stringify
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.String
 import kotlin.collections.Map
@@ -57,6 +60,7 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
 
     init {
         val tsConfigJsonByTsProjectPath = discoverTsConfigJsons(project)
+        println("tsConfigJsonByTsProjectPath: ${stringify(tsConfigJsonByTsProjectPath)}")
 
         for ((tsProjectPath, tsConfigJson) in tsConfigJsonByTsProjectPath) {
             tsProjectByPath.put(tsProjectPath, TsProject(

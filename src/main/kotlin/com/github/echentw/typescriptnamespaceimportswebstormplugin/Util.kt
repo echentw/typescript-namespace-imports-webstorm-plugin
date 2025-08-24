@@ -1,3 +1,5 @@
+import com.google.gson.GsonBuilder
+
 sealed class Result<out OkT, out ErrT> {
     data class Ok<out OkT>(val value: OkT) : Result<OkT, Nothing>()
     data class Err<out ErrT>(val err: ErrT) : Result<Nothing, ErrT>()
@@ -9,7 +11,7 @@ sealed class Result<out OkT, out ErrT> {
     }
 }
 
-fun example(result: Result<String, Int>): Unit {
+fun resultExample(result: Result<String, Int>): Unit {
     when (result) {
         is Result.Err -> {
             println("Error: ${result.err}")
@@ -20,4 +22,9 @@ fun example(result: Result<String, Int>): Unit {
 
     // result is smart cast to Result.Ok<String> here
     val data = result.value
+}
+
+fun stringify(obj: Any): String {
+    val gson = GsonBuilder().setPrettyPrinting().create()
+    return gson.toJson(obj)
 }
