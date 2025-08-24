@@ -137,6 +137,13 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
         // TODO: finish implementing
         for ((tsProjectPath, tsProject) in tsProjectByPath) {
             val evalResult = evaluateModuleForTsProject(tsProjectPath, tsProject.tsConfigJson, file)
+						when (evalResult) {
+								is ModuleEvaluationForTsProject.BareImport -> {
+										
+								}
+								is ModuleEvaluationForTsProject.RelativeImport -> {
+								}
+						}
         }
         ownerTsProjectPathByTsFilePath.remove(file.path)
     }
