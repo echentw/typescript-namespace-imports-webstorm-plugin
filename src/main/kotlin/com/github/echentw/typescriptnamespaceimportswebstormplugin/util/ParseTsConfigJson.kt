@@ -25,24 +25,20 @@ fun parseTsConfigJson(file: VirtualFile): Result<TsConfigJson, String> {
 
     val tsConfig: Json5Object
     try {
-        val parsed: Json5Object? = json5Instance.parse(content).asJson5Object
-        if (parsed == null) return Result.err("$parseErrorPrefix: contents is not object")
-        tsConfig = parsed
+        tsConfig = json5Instance.parse(content).asJson5Object
+            ?: return Result.err("$parseErrorPrefix: contents is not object")
     } catch (e: Json5Exception) {
         return Result.err("$parseErrorPrefix: ${e.toString()}")
     }
 
     val compilerOptions: Json5Object
     try {
-        val element: Json5Element? = tsConfig.get("compilerOptions")
-        if (element == null) {
-            return Result.ok(TsConfigJson(null, null, null))
-        }
-        val value: Json5Object? = element.asJson5Object
-        if (value == null) {
-            return Result.err("$parseErrorPrefix: \"compilerOptions\" is not an object")
-        }
-        compilerOptions = value
+        val element: Json5Element = tsConfig.get("compilerOptions")
+            ?: return Result.ok(TsConfigJson(null, null, null))
+
+        compilerOptions = element.asJson5Object
+            ?: return Result.err("$parseErrorPrefix: \"compilerOptions\" is not an object")
+
     } catch (e: Json5Exception) {
         return Result.err("$parseErrorPrefix: ${e.toString()}")
     }
@@ -50,14 +46,11 @@ fun parseTsConfigJson(file: VirtualFile): Result<TsConfigJson, String> {
     val baseUrl: String?
     try {
         val element: Json5Element? = compilerOptions.get("baseUrl")
-        if (element == null) {
-            baseUrl = null
+        baseUrl = if (element == null) {
+            null
         } else {
-            val value = element.asString
-            if (value == null) {
-                return Result.err("$parseErrorPrefix: \"baseUrl\" is not a string")
-            }
-            baseUrl = value
+            element.asString
+                ?: return Result.err("$parseErrorPrefix: \"baseUrl\" is not a string")
         }
     } catch (e: Json5Exception) {
         return Result.err("$parseErrorPrefix: ${e.toString()}")
@@ -69,10 +62,8 @@ fun parseTsConfigJson(file: VirtualFile): Result<TsConfigJson, String> {
         if (element == null) {
             paths = null
         } else {
-            val value: Json5Object? = element.asJson5Object
-            if (value == null) {
-                return Result.err("$parseErrorPrefix: \"paths\" is not an object")
-            }
+            val value: Json5Object = element.asJson5Object
+                ?: return Result.err("$parseErrorPrefix: \"paths\" is not an object")
 
             paths = mutableMapOf()
             val entries = value.entrySet()
@@ -80,20 +71,17 @@ fun parseTsConfigJson(file: VirtualFile): Result<TsConfigJson, String> {
                 if (key == null || element == null) {
                     return Result.err("$parseErrorPrefix: found null in \"paths\"")
                 }
-                val array: Json5Array? = element.asJson5Array
-                if (array == null) {
-                    return Result.err("$parseErrorPrefix: found non-array value in \"paths\"")
-                }
+                val array: Json5Array = element.asJson5Array
+                    ?: return Result.err("$parseErrorPrefix: found non-array value in \"paths\"")
 
                 val pathsValueList = mutableListOf<String>()
                 for (element in array) {
                     if (element == null) {
                         return Result.err("$parseErrorPrefix: found null array element in \"paths\"")
                     }
-                    val value: String? = element.asString
-                    if (value == null) {
-                        return Result.err("$parseErrorPrefix: found non-string array element in \"paths\"")
-                    }
+                    val value: String = element.asString
+                        ?: return Result.err("$parseErrorPrefix: found non-string array element in \"paths\"")
+
                     pathsValueList.add(value)
                 }
 
@@ -107,14 +95,11 @@ fun parseTsConfigJson(file: VirtualFile): Result<TsConfigJson, String> {
     val outDir: String?
     try {
         val element: Json5Element? = compilerOptions.get("outDir")
-        if (element == null) {
-            outDir = null
+        outDir = if (element == null) {
+            null
         } else {
-            val value = element.asString
-            if (value == null) {
-                return Result.err("$parseErrorPrefix: \"outDir\" is not a string")
-            }
-            outDir = value
+            element.asString
+                ?: return Result.err("$parseErrorPrefix: \"outDir\" is not a string")
         }
     } catch (e: Json5Exception) {
         return Result.err("$parseErrorPrefix: ${e.toString()}")

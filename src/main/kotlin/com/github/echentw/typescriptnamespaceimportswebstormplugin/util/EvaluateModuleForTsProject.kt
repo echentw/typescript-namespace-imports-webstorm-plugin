@@ -6,7 +6,7 @@ import kotlin.io.path.Path
 sealed class ModuleEvaluationForTsProject {
     data class BareImport(val moduleName: String, val importPath: String) : ModuleEvaluationForTsProject()
     data class RelativeImport(val moduleName: String) : ModuleEvaluationForTsProject()
-    object ImportDisallowed : ModuleEvaluationForTsProject()
+    data object ImportDisallowed : ModuleEvaluationForTsProject()
 }
 
 fun evaluateModuleForTsProject(

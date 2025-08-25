@@ -7,8 +7,6 @@ import com.intellij.psi.search.GlobalSearchScope
 import evaluateModuleForTsProject
 import parseTsConfigJson
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.String
-import kotlin.collections.Map
 import kotlin.io.path.Path
 
 data class TsProject(
@@ -140,8 +138,7 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
         if (shouldTsFileBeIgnored(file, tsProjectByPath.mapValues { it.value.tsConfigJson })) return
 
         for ((tsProjectPath, tsProject) in tsProjectByPath) {
-            val evalResult = evaluateModuleForTsProject(tsProjectPath, tsProject.tsConfigJson, file)
-            when (evalResult) {
+            when (val evalResult = evaluateModuleForTsProject(tsProjectPath, tsProject.tsConfigJson, file)) {
                 is ModuleEvaluationForTsProject.BareImport -> {
                     val char = evalResult.moduleName.first()
                     val modules = tsProject.modulesForBareImportByQueryFirstChar[char]
@@ -172,10 +169,9 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
         }
     }
 
-    private fun processNewTsFile(file: VirtualFile, tsProjectPathsSorted: List<TsProjectPath>): Unit {
+    private fun processNewTsFile(file: VirtualFile, tsProjectPathsSorted: List<TsProjectPath>) {
         for ((tsProjectPath, tsProject) in tsProjectByPath) {
-            val evalResult = evaluateModuleForTsProject(tsProjectPath, tsProject.tsConfigJson, file)
-            when (evalResult) {
+            when (val evalResult = evaluateModuleForTsProject(tsProjectPath, tsProject.tsConfigJson, file)) {
                 is ModuleEvaluationForTsProject.BareImport -> {
                     val (moduleName, importPath) = evalResult
                     tsProject.modulesForBareImportByQueryFirstChar
@@ -227,8 +223,7 @@ private fun discoverTsConfigJsons(project: Project): Map<TsProjectPath, TsConfig
 
     val files = FilenameIndex.getVirtualFilesByName("tsconfig.json", GlobalSearchScope.projectScope(project))
     for (file in files) {
-        val result = parseTsConfigJson(file)
-        when (result) {
+        when (val result = parseTsConfigJson(file)) {
             is Result.Err -> {
                 println(result.err)
             }
