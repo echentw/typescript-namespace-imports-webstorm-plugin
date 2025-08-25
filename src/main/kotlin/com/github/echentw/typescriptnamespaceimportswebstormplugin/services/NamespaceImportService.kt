@@ -1,6 +1,5 @@
 package com.github.echentw.typescriptnamespaceimportswebstormplugin.services
 
-import com.intellij.ide.actions.searcheverywhere.evaluate
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.FilenameIndex
@@ -52,11 +51,17 @@ interface NamespaceImportService {
 }
 
 class NamespaceImportServiceImpl(private val project: Project) : NamespaceImportService {
-    private val tsProjectByPath: MutableMap<TsProjectPath, TsProject> = ConcurrentHashMap()
-    private val ownerTsProjectPathByTsFilePath: MutableMap<TsFilePath, TsProjectPath> = ConcurrentHashMap()
+    private var tsProjectByPath: MutableMap<TsProjectPath, TsProject> = ConcurrentHashMap()
+    private var ownerTsProjectPathByTsFilePath: MutableMap<TsFilePath, TsProjectPath> = ConcurrentHashMap()
 
     init {
         Util.playground()
+        reset()
+    }
+
+    private fun reset() {
+        tsProjectByPath = mutableMapOf()
+        ownerTsProjectPathByTsFilePath = mutableMapOf()
 
         val tsConfigJsonByTsProjectPath = discoverTsConfigJsons(project)
         for ((tsProjectPath, tsConfigJson) in tsConfigJsonByTsProjectPath) {
@@ -116,7 +121,7 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
 
     override fun handleFileCreated(file: VirtualFile) {
         if (isTsConfigJson(file)) {
-            // TODO: re-index everything
+            reset()
             return
         }
         if (!isTsFile(file)) return
@@ -128,30 +133,42 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
 
     override fun handleFileDeleted(file: VirtualFile) {
         if (isTsConfigJson(file)) {
-            // TODO: re-index everything
+            reset()
             return
         }
         if (!isTsFile(file)) return
         if (shouldTsFileBeIgnored(file, tsProjectByPath.mapValues { it.value.tsConfigJson })) return
 
-        // TODO: finish implementing
         for ((tsProjectPath, tsProject) in tsProjectByPath) {
             val evalResult = evaluateModuleForTsProject(tsProjectPath, tsProject.tsConfigJson, file)
-						when (evalResult) {
-								is ModuleEvaluationForTsProject.BareImport -> {
-										
-								}
-								is ModuleEvaluationForTsProject.RelativeImport -> {
-								}
-						}
+            when (evalResult) {
+                is ModuleEvaluationForTsProject.BareImport -> {
+                    val char = evalResult.moduleName.first()
+                    val modules = tsProject.modulesForBareImportByQueryFirstChar[char]
+                    if (modules != null) {
+                        val filteredModules = mutableListOf<ModuleForBareImport>()
+                        modules.filterTo(filteredModules) { it.tsFilePath != file.path }
+                        tsProject.modulesForBareImportByQueryFirstChar[char] = filteredModules
+                    }
+                }
+                is ModuleEvaluationForTsProject.RelativeImport -> {
+                    val char = evalResult.moduleName.first()
+                    val modules = tsProject.modulesForRelativeImportByQueryFirstChar[char]
+                    if (modules != null) {
+                        val filteredModules = mutableListOf<ModuleForRelativeImport>()
+                        modules.filterTo(filteredModules) { it.tsFilePath != file.path }
+                        tsProject.modulesForRelativeImportByQueryFirstChar[char] = filteredModules
+                    }
+                }
+                is ModuleEvaluationForTsProject.ImportDisallowed -> {}
+            }
         }
         ownerTsProjectPathByTsFilePath.remove(file.path)
     }
 
     override fun handleFileContentChanged(file: VirtualFile) {
         if (isTsConfigJson(file)) {
-            // TODO: re-index everything
-            return
+            reset()
         }
     }
 
@@ -185,11 +202,11 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
 }
 
 private fun isTsConfigJson(file: VirtualFile): Boolean {
-    return file.name === "tsconfig.json"
+    return file.name == "tsconfig.json"
 }
 
 private fun isTsFile(file: VirtualFile): Boolean {
-    return file.extension === "ts" || file.extension === "tsx"
+    return file.extension == "ts" || file.extension == "tsx"
 }
 
 private fun shouldTsFileBeIgnored(file: VirtualFile, tsConfigJsonByProjectPath: Map<TsProjectPath, TsConfigJson>): Boolean {
@@ -197,7 +214,7 @@ private fun shouldTsFileBeIgnored(file: VirtualFile, tsConfigJsonByProjectPath: 
 
     for ((tsProjectPath, tsConfigJson) in tsConfigJsonByProjectPath) {
         if (tsConfigJson.outDir == null) continue
-        val outDirPath = Path(tsProjectPath).relativize(Path(tsConfigJson.outDir)).normalize().toString()
+        val outDirPath = Path(tsProjectPath).resolve(tsConfigJson.outDir).normalize().toString()
         if (file.path.startsWith(outDirPath)) {
             return true
         }

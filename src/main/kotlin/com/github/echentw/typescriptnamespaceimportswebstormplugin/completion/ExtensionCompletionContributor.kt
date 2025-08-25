@@ -25,7 +25,7 @@ class ExtensionCompletionContributor : CompletionContributor() {
                 service.initialize()
 
                 val currentFile = parameters.originalFile.virtualFile
-                if (currentFile === null) return
+                if (currentFile == null) return
 
                 val query = result.prefixMatcher.prefix.lowercase()
                 if (query.isEmpty()) return
