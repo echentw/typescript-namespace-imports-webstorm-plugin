@@ -2,7 +2,7 @@ package com.github.echentw.typescriptnamespaceimportswebstormplugin.completion
 
 import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.ExtensionServiceImpl
 import com.github.echentw.typescriptnamespaceimportswebstormplugin.settings.PluginSettings
-import com.github.echentw.typescriptnamespaceimportswebstormplugin.util.ImportUtils
+import com.github.echentw.typescriptnamespaceimportswebstormplugin.util.ImportUtil
 import com.intellij.codeInsight.completion.*
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.codeInsight.lookup.LookupElement
@@ -45,11 +45,11 @@ class ExtensionCompletionProvider : CompletionProvider<CompletionParameters>() {
         
         for (module in modules) {
             // Skip if import already exists with any quote style
-            if (ImportUtils.hasExistingImport(documentText, module.moduleName, module.importPath)) {
+            if (ImportUtil.hasExistingImport(documentText, module.moduleName, module.importPath)) {
                 continue
             }
             
-            val importStatement = ImportUtils.createImportStatement(
+            val importStatement = ImportUtil.createImportStatement(
                 module.moduleName, 
                 module.importPath, 
                 settings.quoteStyle
@@ -75,15 +75,8 @@ class InsertImportStatementHandler(private val importStatement: String) : Insert
         // The module name will already be automatically inserted.
         // We just need to add the import statement to the top of the file.
         WriteCommandAction.runWriteCommandAction(project) {
-            val parsedImport = ImportUtils.parseImportStatement(importStatement)
-            
-            if (parsedImport != null) {
-                // Double-check import doesn't exist (safety check)
-                if (!ImportUtils.hasExistingImport(document.text, parsedImport.moduleName, parsedImport.importPath)) {
-                    document.insertString(0, importStatement)
-                    PsiDocumentManager.getInstance(psiFile.project).commitDocument(document)
-                }
-            }
+            document.insertString(0, importStatement)
+            PsiDocumentManager.getInstance(psiFile.project).commitDocument(document)
         }
     }
 }
