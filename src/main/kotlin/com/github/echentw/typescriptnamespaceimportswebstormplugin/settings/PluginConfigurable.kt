@@ -9,63 +9,57 @@ import javax.swing.JPanel
 
 class PluginConfigurable : Configurable {
     
-    private var settingsComponent: PluginSettingsComponent? = null
+    private var quoteStyleComboBox: ComboBox<QuoteStyle>? = null
+    private var mainPanel: JPanel? = null
 
     override fun getDisplayName(): String = "TypeScript Namespace Imports"
 
-    override fun getPreferredFocusedComponent(): JComponent? {
-        return settingsComponent?.getPreferredFocusedComponent()
-    }
+    override fun getPreferredFocusedComponent(): JComponent? = quoteStyleComboBox
 
     override fun createComponent(): JComponent? {
-        settingsComponent = PluginSettingsComponent()
-        return settingsComponent?.getPanel()
+        quoteStyleComboBox = ComboBox(QuoteStyle.entries.toTypedArray()).apply {
+            // Use built-in toString() from enum display name
+            renderer = object : javax.swing.DefaultListCellRenderer() {
+                override fun getListCellRendererComponent(
+                    list: javax.swing.JList<*>?,
+                    value: Any?,
+                    index: Int,
+                    isSelected: Boolean,
+                    cellHasFocus: Boolean
+                ) = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus).apply {
+                    text = (value as? QuoteStyle)?.displayName ?: value?.toString()
+                }
+            }
+        }
+
+        mainPanel = FormBuilder.createFormBuilder()
+            .addLabeledComponent(JBLabel("Quote style for imports:"), quoteStyleComboBox!!, 1, false)
+            .addComponentFillVertically(JPanel(), 0)
+            .panel
+
+        return mainPanel
     }
 
     override fun isModified(): Boolean {
         val settings = PluginSettings.getInstance()
-        return settingsComponent?.getQuoteStyle() != settings.quoteStyle
+        return quoteStyleComboBox?.selectedItem != settings.quoteStyle
     }
 
     override fun apply() {
         val settings = PluginSettings.getInstance()
-        settingsComponent?.getQuoteStyle()?.let { quoteStyle ->
-            settings.quoteStyle = quoteStyle
+        val selectedItem = quoteStyleComboBox?.selectedItem
+        if (selectedItem is QuoteStyle) {
+            settings.quoteStyle = selectedItem
         }
     }
 
     override fun reset() {
         val settings = PluginSettings.getInstance()
-        settingsComponent?.setQuoteStyle(settings.quoteStyle)
+        quoteStyleComboBox?.selectedItem = settings.quoteStyle
     }
 
     override fun disposeUIResources() {
-        settingsComponent = null
-    }
-}
-
-class PluginSettingsComponent {
-    
-    private val panel: JPanel
-    private val quoteStyleComboBox = ComboBox(QuoteStyle.values())
-
-    init {
-        panel = FormBuilder.createFormBuilder()
-            .addLabeledComponent(JBLabel("Quote style for imports:"), quoteStyleComboBox, 1, false)
-            .addComponentFillVertically(JPanel(), 0)
-            .panel
-        
-        // Set custom renderer for better display
-        quoteStyleComboBox.renderer = QuoteStyleListCellRenderer()
-    }
-
-    fun getPanel(): JPanel = panel
-
-    fun getPreferredFocusedComponent(): JComponent = quoteStyleComboBox
-
-    fun getQuoteStyle(): QuoteStyle = quoteStyleComboBox.selectedItem as QuoteStyle
-
-    fun setQuoteStyle(quoteStyle: QuoteStyle) {
-        quoteStyleComboBox.selectedItem = quoteStyle
+        quoteStyleComboBox = null
+        mainPanel = null
     }
 }

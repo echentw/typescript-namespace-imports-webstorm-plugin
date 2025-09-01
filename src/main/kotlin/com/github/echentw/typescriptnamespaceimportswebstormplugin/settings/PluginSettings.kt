@@ -22,12 +22,24 @@ class PluginSettings : PersistentStateComponent<PluginSettings> {
     override fun getState(): PluginSettings = this
 
     override fun loadState(state: PluginSettings) {
-        XmlSerializerUtil.copyBean(state, this)
+        try {
+            XmlSerializerUtil.copyBean(state, this)
+        } catch (e: Exception) {
+            // If settings can't be loaded, keep defaults
+            // Log the error but don't crash the plugin
+            println("TypeScript Namespace Imports: Failed to load settings, using defaults: ${e.message}")
+        }
     }
 
     companion object {
         fun getInstance(): PluginSettings {
-            return ApplicationManager.getApplication().getService(PluginSettings::class.java)
+            return try {
+                ApplicationManager.getApplication().getService(PluginSettings::class.java)
+            } catch (e: Exception) {
+                // Fallback to default settings if service can't be obtained
+                println("TypeScript Namespace Imports: Failed to get settings service, using defaults: ${e.message}")
+                PluginSettings()
+            }
         }
     }
 }
