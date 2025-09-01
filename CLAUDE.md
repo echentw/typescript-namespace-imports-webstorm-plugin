@@ -16,6 +16,7 @@ This is a WebStorm/IntelliJ Platform plugin for TypeScript namespace imports, bu
 - Real-time file system watching for incremental updates
 - Supports both bare imports (via baseUrl/paths) and relative imports
 - Automatically inserts import statements at the top of files
+- Configurable quote style for import statements (single or double quotes)
 
 ## Development Commands
 
@@ -49,6 +50,7 @@ This is a WebStorm/IntelliJ Platform plugin for TypeScript namespace imports, bu
   - `completion/ExtensionCompletionContributor.kt` - Provides TypeScript namespace import completions
   - `services/ExtensionService.kt` - Main service interface and project-level service implementation
   - `services/NamespaceImportService.kt` - Core business logic for module discovery and completion
+  - `settings/` - Configuration classes for plugin settings (quote style, etc.)
   - `startup/ExtensionProjectActivity.kt` - Plugin startup activity that initializes services
   - `util/` - Utility functions for tsconfig.json parsing and module evaluation
 - `src/test/kotlin/` - Test source code following same package structure

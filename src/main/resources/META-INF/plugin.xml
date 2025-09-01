@@ -11,5 +11,8 @@
         <completion.contributor language="TypeScript" implementationClass="com.github.echentw.typescriptnamespaceimportswebstormplugin.completion.ExtensionCompletionContributor"/>
         <projectService serviceInterface="com.github.echentw.typescriptnamespaceimportswebstormplugin.services.ExtensionService"
                         serviceImplementation="com.github.echentw.typescriptnamespaceimportswebstormplugin.services.ExtensionServiceImpl"/>
+        <applicationService serviceImplementation="com.github.echentw.typescriptnamespaceimportswebstormplugin.settings.PluginSettings"/>
+        <applicationConfigurable parentId="tools" instance="com.github.echentw.typescriptnamespaceimportswebstormplugin.settings.PluginConfigurable"
+                                 id="com.github.echentw.typescriptnamespaceimports.configurable" displayName="TypeScript Namespace Imports"/>
     </extensions>
 </idea-plugin>
