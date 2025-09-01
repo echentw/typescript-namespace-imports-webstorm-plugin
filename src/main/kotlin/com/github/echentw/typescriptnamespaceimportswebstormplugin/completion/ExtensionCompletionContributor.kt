@@ -44,12 +44,11 @@ class ExtensionCompletionProvider : CompletionProvider<CompletionParameters>() {
         val documentText = parameters.originalFile.fileDocument.text
         
         for (module in modules) {
-            // Skip if import already exists with any quote style
             if (ImportUtil.hasExistingImport(documentText, module.moduleName, module.importPath)) {
                 continue
             }
             
-            val importStatement = ImportUtil.createImportStatement(
+            val importStatement = ImportUtil.makeImportStatement(
                 module.moduleName, 
                 module.importPath, 
                 settings.quoteStyle

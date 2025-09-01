@@ -7,14 +7,14 @@ import org.junit.Assert.*
 class ImportUtilTest {
 
     @Test
-    fun testCreateImportStatementWithSingleQuotes() {
-        val result = ImportUtil.createImportStatement("myModule", "path/to/module", QuoteStyle.SINGLE)
+    fun testMakeImportStatementWithSingleQuotes() {
+        val result = ImportUtil.makeImportStatement("myModule", "path/to/module", QuoteStyle.SINGLE)
         assertEquals("import * as myModule from 'path/to/module';\n", result)
     }
 
     @Test
-    fun testCreateImportStatementWithDoubleQuotes() {
-        val result = ImportUtil.createImportStatement("myModule", "path/to/module", QuoteStyle.DOUBLE)
+    fun testMakeImportStatementWithDoubleQuotes() {
+        val result = ImportUtil.makeImportStatement("myModule", "path/to/module", QuoteStyle.DOUBLE)
         assertEquals("import * as myModule from \"path/to/module\";\n", result)
     }
 

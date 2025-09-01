@@ -4,7 +4,7 @@ import com.github.echentw.typescriptnamespaceimportswebstormplugin.settings.Quot
 
 object ImportUtil {
     
-    fun createImportStatement(moduleName: String, importPath: String, quoteStyle: QuoteStyle): String {
+    fun makeImportStatement(moduleName: String, importPath: String, quoteStyle: QuoteStyle): String {
         val quote = quoteStyle.character
         return "import * as $moduleName from $quote$importPath$quote;\n"
     }
