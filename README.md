@@ -19,6 +19,8 @@
 
 <!-- Plugin description -->
 
+## Description
+
 This plugin helps you with namespace imports when writing code.
 
 A [namespace import](https://exploringjs.com/es6/ch_modules.html#_importing-styles) is an import like:
@@ -28,12 +30,18 @@ import * as moduleName from 'path/to/module_name';
 
 This plugin offers the camelCase version of every typescript file in your workspace as a module inside of autocomplete.
 
+
 For example if the file `module_name` exists in your
 workspace, it will offer to import it as a module called
 `moduleName`.
 
 - As you type "moduleNa", you will see "moduleName" as an autocomplete suggestion.
 - If you select it, then `import * as moduleName from 'path/to/module_name';` will automatically be added to the top of the file.
+
+## Settings
+
+Under "Settings" > "Tools" > "Typescript Namespace Imports", you can choose whether
+single or double quotes are used for the auto-inserted import statement.
 
 <!-- Plugin description end -->
 
