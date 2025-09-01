@@ -8,7 +8,15 @@ See plan.md
 
 ## Project Overview
 
-This is an IntelliJ Platform plugin project for TypeScript namespace imports, built using Kotlin and the IntelliJ Platform Gradle Plugin. The project is based on the IntelliJ Platform Plugin Template and targets IntelliJ IDEA Community Edition (IC) platform version 2024.3.6.
+This is a WebStorm/IntelliJ Platform plugin for TypeScript namespace imports, built using Kotlin and the IntelliJ Platform Gradle Plugin. The plugin provides intelligent autocomplete for namespace imports (e.g., `import * as moduleName from 'path/to/module'`) by scanning TypeScript files and respecting tsconfig.json configuration.
+
+**Key Features:**
+- Scans project for .ts/.tsx files and generates camelCase module names for autocomplete
+- Respects tsconfig.json settings including baseUrl, paths, and outDir
+- Real-time file system watching for incremental updates
+- Supports both bare imports (via baseUrl/paths) and relative imports
+- Automatically inserts import statements at the top of files
+- Configurable quote style for import statements (single or double quotes)
 
 ## Development Commands
 
@@ -39,11 +47,12 @@ This is an IntelliJ Platform plugin project for TypeScript namespace imports, bu
 
 ### Source Code Organization
 - `src/main/kotlin/com/github/echentw/typescriptnamespaceimportswebstormplugin/` - Main plugin source
-  - `MyBundle.kt` - Internationalization bundle for plugin messages
-  - `services/MyProjectService.kt` - Project-level service implementation
-  - `startup/MyProjectActivity.kt` - Plugin startup activity
-  - `toolWindow/MyToolWindowFactory.kt` - Tool window factory for UI components
-- `src/main/resources/messages/MyBundle.properties` - Localization message properties
+  - `completion/ExtensionCompletionContributor.kt` - Provides TypeScript namespace import completions
+  - `services/ExtensionService.kt` - Main service interface and project-level service implementation
+  - `services/NamespaceImportService.kt` - Core business logic for module discovery and completion
+  - `settings/` - Configuration classes for plugin settings (quote style, etc.)
+  - `startup/ExtensionProjectActivity.kt` - Plugin startup activity that initializes services
+  - `util/` - Utility functions for tsconfig.json parsing and module evaluation
 - `src/test/kotlin/` - Test source code following same package structure
 
 ### Configuration Files
@@ -56,27 +65,55 @@ This is an IntelliJ Platform plugin project for TypeScript namespace imports, bu
 
 The plugin is configured for:
 - **Plugin ID**: `com.github.echentw.typescriptnamespaceimports`
-- **Plugin Name**: "Typescript Namespace Imports"
-- **Since Build**: 243 (minimum supported IDE version)
-- **Platform**: IntelliJ IDEA Community Edition
+- **Plugin Name**: "Typescript Namespace Imports"  
+- **Since Build**: 242 (minimum supported IDE version)
+- **Platform**: WebStorm (WS) 2024.2.4
 - **JVM Target**: Java 21
+- **Dependencies**: Gson for JSON parsing, JSON5 for tsconfig.json parsing with comments
 
-## Architecture Notes
+## Architecture Overview
 
-This is a template-based IntelliJ Platform plugin that provides:
-- A tool window extension point for UI components
-- A post-startup activity for initialization logic
-- Internationalization support through resource bundles
-- Project-level services for plugin functionality
+The plugin operates through three main components:
 
-The plugin follows IntelliJ Platform plugin development best practices with proper separation of concerns between UI components, services, and configuration.
+1. **Completion System** (`ExtensionCompletionContributor`)
+   - Triggers on any character input in TypeScript files
+   - Provides namespace import suggestions based on user query
+   - Automatically inserts import statements at file top when completions are selected
 
-## Learnings
+2. **Service Layer** (`ExtensionService` + `NamespaceImportService`)
+   - `ExtensionServiceImpl`: Project-level service that manages initialization and file watching
+   - `NamespaceImportServiceImpl`: Core business logic for module discovery and completion matching
+   - Uses concurrent data structures for thread-safe caching of TypeScript projects and modules
 
+3. **File System Integration**
+   - Real-time file system monitoring via `BulkFileListener`
+   - Incremental updates for .ts/.tsx file changes (create, delete, move, rename)
+   - Full rescan on tsconfig.json changes
+   - Efficient caching with modules grouped by query first character for fast lookups
+
+## Development Notes
+
+### IntelliJ Completion API Behavior
 - The `addCompletions()` method in a `CompletionContributor` does NOT get called for every character the user types. Instead, it follows a two-phase process:
   1. **Generation Phase**: `addCompletions()` is called when the user starts typing (typically on the first character)
   2. **Filtering Phase**: As the user continues typing, IntelliJ filters the existing completion results without calling `addCompletions()` again
   - Practical Implications:
     - ❌ `if (prefix.contains("asdf"))` - Won't work because by the time user types "asdf", the method isn't being called
     - ✅ `if ("asdf".startsWith(prefix))` - Works because it catches partial prefixes like "a", "as", "asd" during the initial generation phase
+
+### Data Flow
+1. **Startup**: `ExtensionProjectActivity` initializes the `ExtensionService`
+2. **Initialization**: Service scans for tsconfig.json files, then indexes all .ts/.tsx files
+3. **Module Evaluation**: Each file is evaluated against each TypeScript project to determine import type (bare/relative/disallowed)
+4. **Caching**: Modules are cached by first character of module name for efficient lookup
+5. **Completion**: User typing triggers completion contributor which queries cached modules by prefix
+
+### Performance Optimizations
+- **Character-based indexing**: Modules cached by first character to avoid scanning all possibilities
+- **Concurrent data structures**: Thread-safe maps allow background file system updates
+- **Incremental updates**: Individual file changes update cache without full rescan
+- **Project-aware caching**: Each TypeScript project maintains its own module cache
+
+### Debugging
 - Use `println()` statements that appear in the `./gradlew runIde` terminal output
+- Check `Util.playground()` method for debugging utilities
