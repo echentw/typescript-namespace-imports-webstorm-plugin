@@ -35,7 +35,7 @@ class ExtensionServiceImpl(private val project: Project) : ExtensionService {
 
     override fun getModulesForCompletion(file: VirtualFile, query: String): List<ModuleForCompletion> {
         if (service == null) return emptyList()
-        return service!!.getModulesForCompletion(file, query)
+        return service!!.getModulesForCompletion(file.path, query)
     }
 
     private fun setupFileWatcher(service: NamespaceImportService) {
@@ -47,29 +47,45 @@ class ExtensionServiceImpl(private val project: Project) : ExtensionService {
                         is VFileCreateEvent -> {
                             val file = event.file
                             if (file != null) {
-                                service.handleFileCreated(file)
+                                handleFileOrDirCreated(file) { filePath ->
+                                    service.handleFileCreated(filePath)
+                                }
                             }
                         }
                         is VFileDeleteEvent -> {
-                            service.handleFileDeleted(event.file)
+                            service.handleFileDeleted(event.file.path, event.file.isDirectory)
                         }
                         is VFileMoveEvent -> {
-                            service.handleFileDeleted(event.file)
-                            service.handleFileCreated(event.file)
+                            service.handleFileDeleted(event.oldPath, event.file.isDirectory)
+                            handleFileOrDirCreated(event.file) { filePath ->
+                                service.handleFileCreated(filePath)
+                            }
                         }
                         is VFilePropertyChangeEvent -> {
                             if (event.propertyName == VirtualFile.PROP_NAME) {
                                 // File was renamed
-                                service.handleFileDeleted(event.file)
-                                service.handleFileCreated(event.file)
+                                service.handleFileDeleted(event.oldPath, event.file.isDirectory)
+                                handleFileOrDirCreated(event.file) { filePath ->
+                                    service.handleFileCreated(filePath)
+                                }
                             }
                         }
                         is VFileContentChangeEvent -> {
-                            service.handleFileContentChanged(event.file)
+                            service.handleFileContentChanged(event.file.path)
                         }
                     }
                 }
             }
         })
+    }
+}
+
+fun handleFileOrDirCreated(file: VirtualFile, handleFileFn: (filePath: FilePath) -> Unit) {
+    if (file.isDirectory) {
+        for (child in file.children) {
+            handleFileOrDirCreated(child, handleFileFn)
+        }
+    } else {
+        handleFileFn(file.path)
     }
 }

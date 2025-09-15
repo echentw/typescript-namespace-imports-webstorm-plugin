@@ -1,7 +1,9 @@
+import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.FilePath
 import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.TsConfigJson
 import com.github.echentw.typescriptnamespaceimportswebstormplugin.services.TsProjectPath
-import com.intellij.openapi.vfs.VirtualFile
+import java.nio.file.Paths
 import kotlin.io.path.Path
+import kotlin.io.path.nameWithoutExtension
 
 sealed class ModuleEvaluationForTsProject {
     data class BareImport(val moduleName: String, val importPath: String) : ModuleEvaluationForTsProject()
@@ -12,24 +14,24 @@ sealed class ModuleEvaluationForTsProject {
 fun evaluateModuleForTsProject(
     tsProjectPath: TsProjectPath,
     tsConfigJson: TsConfigJson,
-    file: VirtualFile,
+    filePath: FilePath,
 ): ModuleEvaluationForTsProject {
-    val moduleName = makeModuleName(file)
+    val moduleName = makeModuleName(filePath)
 
-    val bareImportPath = makeBareImportPath(tsProjectPath, tsConfigJson, file)
+    val bareImportPath = makeBareImportPath(tsProjectPath, tsConfigJson, filePath)
     if (bareImportPath != null) {
         return ModuleEvaluationForTsProject.BareImport(moduleName, bareImportPath)
     }
 
-    if (file.path.startsWith(tsProjectPath)) {
+    if (filePath.startsWith(tsProjectPath)) {
         return ModuleEvaluationForTsProject.RelativeImport(moduleName)
     }
 
     return ModuleEvaluationForTsProject.ImportDisallowed
 }
 
-private fun makeModuleName(file: VirtualFile): String {
-    return toCamelCase(file.nameWithoutExtension)
+private fun makeModuleName(filePath: FilePath): String {
+    return toCamelCase(Paths.get(filePath).nameWithoutExtension)
 }
 
 private fun toCamelCase(value: String): String {
@@ -44,17 +46,17 @@ private fun toCamelCase(value: String): String {
 private fun makeBareImportPath(
     tsProjectPath: TsProjectPath,
     tsConfigJson: TsConfigJson,
-    file: VirtualFile,
+    filePath: FilePath,
 ): String? {
-    val matchedPath = matchPathPatternForProject(tsProjectPath, tsConfigJson, file)
+    val matchedPath = matchPathPatternForProject(tsProjectPath, tsConfigJson, filePath)
     if (matchedPath != null) {
         return Util.pathWithoutExtension(matchedPath)
     }
 
     if (tsConfigJson.baseUrl != null) {
         val baseUrlPath = Path(tsProjectPath).resolve(tsConfigJson.baseUrl).normalize()
-        if (file.path.startsWith(baseUrlPath.toString())) {
-            val relativeFilePath = baseUrlPath.relativize(Path(file.path)).toString()
+        if (filePath.startsWith(baseUrlPath.toString())) {
+            val relativeFilePath = baseUrlPath.relativize(Path(filePath)).toString()
 
             if (!doesImportPathViaBaseUrlConflictWithPathsMapping(relativeFilePath, tsConfigJson)) {
                 return Util.pathWithoutExtension(relativeFilePath)
@@ -68,7 +70,7 @@ private fun makeBareImportPath(
 private fun matchPathPatternForProject(
     tsProjectPath: TsProjectPath,
     tsConfigJson: TsConfigJson,
-    file: VirtualFile,
+    filePath: FilePath,
 ): String? {
     if (tsConfigJson.paths == null) return null
 
@@ -84,11 +86,11 @@ private fun matchPathPatternForProject(
                 val patternPrefix = pattern.replace("*", "")
                 val mappingPrefix = resolvedMapping.toString().replace("*", "")
 
-                if (file.path.startsWith(mappingPrefix)) {
-                    val suffix = file.path.substring(mappingPrefix.length)
+                if (filePath.startsWith(mappingPrefix)) {
+                    val suffix = filePath.substring(mappingPrefix.length)
                     return patternPrefix + suffix
                 }
-            } else if (file.path == resolvedMapping.toString()) {
+            } else if (filePath == resolvedMapping.toString()) {
                 return pattern
             }
         }
