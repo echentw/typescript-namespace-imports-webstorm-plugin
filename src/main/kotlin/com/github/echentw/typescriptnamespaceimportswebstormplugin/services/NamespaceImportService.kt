@@ -72,7 +72,7 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
 
         val tsFiles = FilenameIndex.getAllFilesByExt(project, "ts", GlobalSearchScope.projectScope(project))
         val tsxFiles = FilenameIndex.getAllFilesByExt(project, "tsx", GlobalSearchScope.projectScope(project))
-        val allFiles = (tsFiles + tsxFiles).filter { !shouldTsFileBeIgnored(it, tsConfigJsonByTsProjectPath) }
+        val allFiles = (tsFiles + tsxFiles).filter { !shouldFileBeIgnored(it, tsConfigJsonByTsProjectPath) }
 
         val tsProjectPathsSorted = tsProjectByPath.keys.sortedByDescending { it.count { char -> char == '/' } }
         for (file in allFiles) {
@@ -118,49 +118,86 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
     }
 
     override fun handleFileCreated(file: VirtualFile) {
+        if (file.isDirectory) {
+            for (child in file.children) {
+                handleFileCreated(child)
+            }
+            return
+        }
+
         if (isTsConfigJson(file)) {
             reset()
             return
         }
         if (!isTsFile(file)) return
-        if (shouldTsFileBeIgnored(file, tsProjectByPath.mapValues { it.value.tsConfigJson })) return
+        if (shouldFileBeIgnored(file, tsProjectByPath.mapValues { it.value.tsConfigJson })) return
 
         val tsProjectPathsSorted = tsProjectByPath.keys.sortedByDescending { it.count { char -> char == '/' } }
         processNewTsFile(file, tsProjectPathsSorted)
     }
 
     override fun handleFileDeleted(file: VirtualFile) {
-        if (isTsConfigJson(file)) {
-            reset()
-            return
-        }
-        if (!isTsFile(file)) return
-        if (shouldTsFileBeIgnored(file, tsProjectByPath.mapValues { it.value.tsConfigJson })) return
-
-        for ((tsProjectPath, tsProject) in tsProjectByPath) {
-            when (val evalResult = evaluateModuleForTsProject(tsProjectPath, tsProject.tsConfigJson, file)) {
-                is ModuleEvaluationForTsProject.BareImport -> {
-                    val char = evalResult.moduleName.first()
-                    val modules = tsProject.modulesForBareImportByQueryFirstChar[char]
-                    if (modules != null) {
-                        val filteredModules = mutableListOf<ModuleForBareImport>()
-                        modules.filterTo(filteredModules) { it.tsFilePath != file.path }
-                        tsProject.modulesForBareImportByQueryFirstChar[char] = filteredModules
-                    }
+        if (file.isDirectory) {
+            for (tsProjectPath in tsProjectByPath.keys) {
+                if (tsProjectPath.startsWith(file.path)) {
+                    reset()
+                    return
                 }
-                is ModuleEvaluationForTsProject.RelativeImport -> {
-                    val char = evalResult.moduleName.first()
-                    val modules = tsProject.modulesForRelativeImportByQueryFirstChar[char]
-                    if (modules != null) {
-                        val filteredModules = mutableListOf<ModuleForRelativeImport>()
-                        modules.filterTo(filteredModules) { it.tsFilePath != file.path }
-                        tsProject.modulesForRelativeImportByQueryFirstChar[char] = filteredModules
-                    }
-                }
-                is ModuleEvaluationForTsProject.ImportDisallowed -> {}
             }
+            if (shouldFileBeIgnored(file, tsProjectByPath.mapValues { it.value.tsConfigJson })) return
+
+            for ((_, tsProject) in tsProjectByPath) {
+                for ((_, modules) in tsProject.modulesForBareImportByQueryFirstChar) {
+                    modules.removeAll { it.tsFilePath.startsWith(file.path) }
+                }
+                for ((_, modules) in tsProject.modulesForRelativeImportByQueryFirstChar) {
+                    modules.removeAll { it.tsFilePath.startsWith(file.path) }
+                }
+            }
+
+            val toRemove = mutableListOf<TsFilePath>()
+            for (tsFilePath in ownerTsProjectPathByTsFilePath.keys) {
+                if (tsFilePath.startsWith(file.path)) {
+                    toRemove.add(tsFilePath)
+                }
+            }
+            for (tsFilePath in toRemove) {
+                ownerTsProjectPathByTsFilePath.remove(tsFilePath)
+            }
+        } else {
+            if (isTsConfigJson(file)) {
+                reset()
+                return
+            }
+            if (!isTsFile(file)) return
+            if (shouldFileBeIgnored(file, tsProjectByPath.mapValues { it.value.tsConfigJson })) return
+
+            for ((tsProjectPath, tsProject) in tsProjectByPath) {
+                when (val evalResult = evaluateModuleForTsProject(tsProjectPath, tsProject.tsConfigJson, file)) {
+                    is ModuleEvaluationForTsProject.BareImport -> {
+                        val char = evalResult.moduleName.first()
+                        val modules = tsProject.modulesForBareImportByQueryFirstChar[char]
+                        if (modules != null) {
+                            val filteredModules = mutableListOf<ModuleForBareImport>()
+                            modules.filterTo(filteredModules) { it.tsFilePath != file.path }
+                            tsProject.modulesForBareImportByQueryFirstChar[char] = filteredModules
+                        }
+                    }
+                    is ModuleEvaluationForTsProject.RelativeImport -> {
+                        val char = evalResult.moduleName.first()
+                        val modules = tsProject.modulesForRelativeImportByQueryFirstChar[char]
+                        if (modules != null) {
+                            val filteredModules = mutableListOf<ModuleForRelativeImport>()
+                            modules.filterTo(filteredModules) { it.tsFilePath != file.path }
+                            tsProject.modulesForRelativeImportByQueryFirstChar[char] = filteredModules
+                        }
+                    }
+                    is ModuleEvaluationForTsProject.ImportDisallowed -> {}
+                }
+            }
+
+            ownerTsProjectPathByTsFilePath.remove(file.path)
         }
-        ownerTsProjectPathByTsFilePath.remove(file.path)
     }
 
     override fun handleFileContentChanged(file: VirtualFile) {
@@ -205,7 +242,7 @@ private fun isTsFile(file: VirtualFile): Boolean {
     return file.extension == "ts" || file.extension == "tsx"
 }
 
-private fun shouldTsFileBeIgnored(file: VirtualFile, tsConfigJsonByProjectPath: Map<TsProjectPath, TsConfigJson>): Boolean {
+private fun shouldFileBeIgnored(file: VirtualFile, tsConfigJsonByProjectPath: Map<TsProjectPath, TsConfigJson>): Boolean {
     if (file.path.contains("/node_modules/")) return true
 
     for ((tsProjectPath, tsConfigJson) in tsConfigJsonByProjectPath) {
