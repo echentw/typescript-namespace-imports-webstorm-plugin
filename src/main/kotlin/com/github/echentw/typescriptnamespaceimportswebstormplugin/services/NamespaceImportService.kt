@@ -146,7 +146,7 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
             }
             if (shouldFileBeIgnored(file, tsProjectByPath.mapValues { it.value.tsConfigJson })) return
 
-            for ((tsProjectPath, tsProject) in tsProjectByPath) {
+            for ((_, tsProject) in tsProjectByPath) {
                 for ((_, modules) in tsProject.modulesForBareImportByQueryFirstChar) {
                     modules.removeAll { it.tsFilePath.startsWith(file.path) }
                 }
