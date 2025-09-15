@@ -45,23 +45,19 @@ class ExtensionServiceImpl(private val project: Project) : ExtensionService {
                 for (event in events) {
                     when (event) {
                         is VFileCreateEvent -> {
-                            println("[VFileCreateEvent]: ${event.file}")
                             val file = event.file
                             if (file != null) {
                                 service.handleFileCreated(file)
                             }
                         }
                         is VFileDeleteEvent -> {
-                            println("[VFileDeleteEvent]: ${event.file}")
                             service.handleFileDeleted(event.file)
                         }
                         is VFileMoveEvent -> {
-                            println("[VFileMoveEvent]: ${event.file}")
                             service.handleFileDeleted(event.file)
                             service.handleFileCreated(event.file)
                         }
                         is VFilePropertyChangeEvent -> {
-                            println("[VFilePropertyChangeEvent]: ${event.file}")
                             if (event.propertyName == VirtualFile.PROP_NAME) {
                                 // File was renamed
                                 service.handleFileDeleted(event.file)
@@ -69,7 +65,6 @@ class ExtensionServiceImpl(private val project: Project) : ExtensionService {
                             }
                         }
                         is VFileContentChangeEvent -> {
-                            println("[VFileChangeEvent]: ${event.file}")
                             service.handleFileContentChanged(event.file)
                         }
                     }
