@@ -79,8 +79,8 @@ class NamespaceImportServiceImpl(private val project: Project) : NamespaceImport
             processNewTsFile(file, tsProjectPathsSorted)
         }
 
-//        println("tsProjectByPath: ${Util.stringify(tsProjectByPath)}")
-//        println("ownerTsProjectPathByTsFilePath: ${Util.stringify(ownerTsProjectPathByTsFilePath)}")
+        println("tsProjectByPath: ${Util.stringify(tsProjectByPath)}")
+        println("ownerTsProjectPathByTsFilePath: ${Util.stringify(ownerTsProjectPathByTsFilePath)}")
     }
 
     override fun getModulesForCompletion(file: VirtualFile, query: String): List<ModuleForCompletion> {
