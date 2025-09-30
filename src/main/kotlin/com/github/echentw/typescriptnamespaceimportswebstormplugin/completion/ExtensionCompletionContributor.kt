@@ -30,9 +30,6 @@ class ExtensionCompletionProvider : CompletionProvider<CompletionParameters>() {
         val project = parameters.position.project
         val service = project.getService(ExtensionServiceImpl::class.java)
 
-        // Call initialize here again, just in case
-        service.initialize()
-
         val currentFile = parameters.originalFile.virtualFile
         if (currentFile == null) return
 
@@ -42,7 +39,7 @@ class ExtensionCompletionProvider : CompletionProvider<CompletionParameters>() {
         val modules = service.getModulesForCompletion(currentFile, query)
         val settings = PluginSettings.getInstance()
         val documentText = parameters.originalFile.fileDocument.text
-        
+
         for (module in modules) {
             if (ImportUtil.hasExistingImport(documentText, module.moduleName, module.importPath)) {
                 continue
@@ -53,7 +50,7 @@ class ExtensionCompletionProvider : CompletionProvider<CompletionParameters>() {
                 module.importPath, 
                 settings.quoteStyle
             )
-            
+
             result.addElement(
                 LookupElementBuilder.create(module.moduleName)
                     .withPresentableText(module.moduleName)

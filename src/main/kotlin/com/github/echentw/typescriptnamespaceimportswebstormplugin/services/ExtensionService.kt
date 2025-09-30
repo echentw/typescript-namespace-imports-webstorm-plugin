@@ -1,6 +1,7 @@
 package com.github.echentw.typescriptnamespaceimportswebstormplugin.services
 
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
@@ -20,17 +21,13 @@ interface ExtensionService {
 @Service(Service.Level.PROJECT)
 class ExtensionServiceImpl(private val project: Project) : ExtensionService {
 
-    private var hasInitStarted = false
     private var service: NamespaceImportService? = null
 
     override fun initialize() {
-        if (!hasInitStarted) {
-            hasInitStarted = true
-
-            val service = NamespaceImportServiceImpl(project)
-            setupFileWatcher(service)
-            this.service = service
-        }
+        thisLogger().info("initialize")
+        val service = NamespaceImportServiceImpl(project)
+        setupFileWatcher(service)
+        this.service = service
     }
 
     override fun getModulesForCompletion(file: VirtualFile, query: String): List<ModuleForCompletion> {
